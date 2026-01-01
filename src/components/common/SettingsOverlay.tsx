@@ -12,6 +12,17 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ onClose }) => 
     const [msg, setMsg] = useState('');
     const [pendingFile, setPendingFile] = useState<File | null>(null);
 
+    // Escape key handling
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    // ... (rest of the file constants)
+
     const handleExport = async () => {
         try {
             const json = await ImportExportService.exportData();
@@ -56,12 +67,18 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ onClose }) => 
     };
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)', zIndex: 9999,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-            <div style={{ width: '100%', maxWidth: '400px', margin: 16 }}>
+        <div
+            style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(0,0,0,0.8)', zIndex: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onClick={onClose} // Backdrop click
+        >
+            <div
+                style={{ width: '100%', maxWidth: '400px', margin: 16 }}
+                onClick={e => e.stopPropagation()} // Prevent closing when clicking content
+            >
                 <Panel title="Settings / Data" actions={<Button onClick={onClose}>Close</Button>}>
                     <div className="flex-col" style={{ padding: 16 }}>
                         <div className="text-dim" style={{ marginBottom: 16 }}>

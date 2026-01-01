@@ -9,8 +9,7 @@ export const TaskService = {
             nodeId,
             title,
             credit,
-            isDone: false,
-            isArchived: false,
+            progress: 0.0,
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
@@ -25,9 +24,11 @@ export const TaskService = {
         });
     },
 
-    async archiveTask(id: string): Promise<void> {
-        await this.updateTask(id, { isArchived: true });
-    },
+    // Archive concept removed per request, or strictly filtered via UI? 
+    // Request said "Remove isDone, isArchived". 
+    // If we need deletion/soft-deletion, we might just rely on delete?
+    // Let's remove archiveTask for now.
+
 
     async addPrereq(taskId: string, prereqTaskId: string): Promise<void> {
         if (taskId === prereqTaskId) throw new Error("Task cannot depend on itself.");

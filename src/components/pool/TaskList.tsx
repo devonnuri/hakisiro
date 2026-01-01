@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db';
 import { TaskService } from '../../services/TaskService';
+import { LedgerService } from '../../services/LedgerService';
 import { Button } from '../ui/Button';
+import { ProgressControl } from '../common/ProgressControl';
 import type { Task } from '../../types/db';
 
 interface TaskListProps {
@@ -10,8 +12,9 @@ interface TaskListProps {
 }
 
 export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
+    // Removed !t.isArchived filter as isArchived is removed
     const tasks = useLiveQuery(
-        () => db.tasks.where('nodeId').equals(nodeId).filter(t => !t.isArchived).toArray(),
+        () => db.tasks.where('nodeId').equals(nodeId).toArray(),
         [nodeId]
     );
 
@@ -32,8 +35,21 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
         }
     };
 
-    const handleToggleDone = async (task: Task) => {
-        await TaskService.updateTask(task.id, { isDone: !task.isDone });
+    const handleProgressChange = async (task: Task, newProgress: number) => {
+        const oldProgress = task.progress || 0; // Handle migration case
+        const delta = newProgress - oldProgress;
+        const today = new Date().toISOString().split('T')[0];
+
+        const updates: any = { progress: newProgress };
+
+        if (newProgress >= 1.0 && oldProgress < 1.0) {
+            updates.completionDate = today;
+        } else if (newProgress < 1.0 && oldProgress >= 1.0) {
+            updates.completionDate = null;
+        }
+
+        await TaskService.updateTask(task.id, updates);
+        await LedgerService.logProgressDelta(today, task.id, delta);
     };
 
     const handleAddToToday = async (task: Task) => {
@@ -90,27 +106,30 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
             </div>
 
             <div className="flex-col">
-                {tasks.map(task => (
-                    <div key={task.id} className="panel" style={{ marginBottom: 8, borderColor: task.isDone ? 'var(--text-secondary)' : 'var(--border-color)' }}>
-                        <div className="panel-content flex-row">
-                            <div
-                                style={{ cursor: 'pointer', fontWeight: 'bold' }}
-                                onClick={() => handleToggleDone(task)}
-                            >
-                                [{task.isDone ? 'x' : ' '}]
+                {tasks.map(task => {
+                    const isDone = task.progress >= 1.0;
+                    return (
+                        <div key={task.id} className="panel" style={{ marginBottom: 8, borderColor: isDone ? 'var(--text-secondary)' : 'var(--border-color)' }}>
+                            <div className="panel-content flex-row" style={{ alignItems: 'center' }}>
+                                <div style={{ marginRight: 8 }}>
+                                    <ProgressControl
+                                        value={task.progress || 0}
+                                        onChange={(val) => handleProgressChange(task, val)}
+                                    />
+                                </div>
+                                <div style={{ flex: 1, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'var(--text-secondary)' : 'inherit' }}>
+                                    {task.title}
+                                </div>
+                                <div title="Credits" style={{ marginRight: 8 }}>
+                                    ({task.credit})
+                                </div>
+                                <Button onClick={() => handleAddToToday(task)} style={{ fontSize: '0.8em', padding: '2px 4px' }}>
+                                    To Today
+                                </Button>
                             </div>
-                            <div style={{ flex: 1, textDecoration: task.isDone ? 'line-through' : 'none', color: task.isDone ? 'var(--text-secondary)' : 'inherit' }}>
-                                {task.title}
-                            </div>
-                            <div title="Credits">
-                                ({task.credit})
-                            </div>
-                            <Button onClick={() => handleAddToToday(task)} style={{ fontSize: '0.8em', padding: '2px 4px' }}>
-                                To Today
-                            </Button>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {tasks.length === 0 && !isCreating && (
                     <div className="text-dim" style={{ textAlign: 'center' }}>No tasks in this node.</div>
                 )}

@@ -2,29 +2,24 @@ import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db';
 import { LedgerService } from '../../services/LedgerService';
-import { Button } from '../ui/Button';
+import { TaskService } from '../../services/TaskService';
+import { ProgressControl } from '../common/ProgressControl';
 import type { LogEntry, Task } from '../../types/db';
 
 interface TodayRowProps {
     task?: Task;
     log?: LogEntry;
-    onWeightChange: (val: number) => void;
+    onProgressChange: (newVal: number) => void;
     onRemove: () => void;
     nodeCode?: string;
 }
 
-const TodayRow: React.FC<TodayRowProps> = ({ task, log, onWeightChange, onRemove, nodeCode }) => {
+const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemove, nodeCode }) => {
     if (!task) return null;
 
-    const weight = log?.weight || 0;
-    const earned = (task.credit * weight).toFixed(1);
-
-    const handleStep = (delta: number) => {
-        let newW = Math.round((weight + delta) * 10) / 10;
-        if (newW < 0) newW = 0;
-        if (newW > 1.0) newW = 1.0;
-        onWeightChange(newW);
-    };
+    // log.weight is now "Sum of Deltas Today". 
+    // Activity generated today = credit * weight.
+    const activityToday = (task.credit * (log?.weight || 0)).toFixed(1);
 
     return (
         <div className="panel" style={{ marginBottom: 4 }}>
@@ -37,13 +32,14 @@ const TodayRow: React.FC<TodayRowProps> = ({ task, log, onWeightChange, onRemove
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Button onClick={() => handleStep(-0.1)} disabled={weight <= 0}>[-]</Button>
-                    <div style={{ width: 40, textAlign: 'center', fontWeight: 'bold' }}>{weight.toFixed(1)}</div>
-                    <Button onClick={() => handleStep(0.1)} disabled={weight >= 1.0}>[+]</Button>
+                    <ProgressControl
+                        value={task.progress}
+                        onChange={onProgressChange}
+                    />
                 </div>
 
-                <div style={{ width: 50, textAlign: 'right', fontWeight: 'bold', color: 'var(--accent-color)' }}>
-                    {earned}
+                <div style={{ width: 50, textAlign: 'right', fontWeight: 'bold', color: 'var(--accent-color)' }} title="Activity Generated Today">
+                    {activityToday}
                 </div>
 
                 <div style={{ marginLeft: 8, cursor: 'pointer', color: '#666' }} onClick={onRemove}>x</div>
@@ -59,6 +55,7 @@ interface TodayListProps {
 export const TodayList: React.FC<TodayListProps> = ({ date }) => {
     const items = useLiveQuery(() => db.todayItems.where('date').equals(date).sortBy('order'), [date]);
 
+    // Complex query to resolve dependencies
     const tasksInfo = useLiveQuery(async () => {
         if (!items) return { tasks: {}, logs: {}, nodes: {} };
 
@@ -90,8 +87,20 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
         return { tasks: tasksMap, logs: logsMap, nodes: nodesMap };
     }, [items, date]);
 
-    const handleWeight = async (taskId: string, w: number) => {
-        await LedgerService.upsertLog(date, taskId, w);
+    const handleProgressChange = async (task: Task, newProgress: number) => {
+        const oldProgress = task.progress || 0;
+        const delta = newProgress - oldProgress;
+
+        const updates: any = { progress: newProgress };
+
+        if (newProgress >= 1.0 && oldProgress < 1.0) {
+            updates.completionDate = date; // Use the view's date
+        } else if (newProgress < 1.0 && oldProgress >= 1.0) {
+            updates.completionDate = null;
+        }
+
+        await TaskService.updateTask(task.id, updates);
+        await LedgerService.logProgressDelta(date, task.id, delta);
     };
 
     const handleRemove = async (itemId?: number) => {
@@ -113,7 +122,7 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
                         task={task}
                         log={log}
                         nodeCode={nodeCode}
-                        onWeightChange={(w) => handleWeight(item.taskId, w)}
+                        onProgressChange={(val) => task && handleProgressChange(task, val)}
                         onRemove={() => handleRemove(item.id)}
                     />
                 );

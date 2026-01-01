@@ -13,8 +13,8 @@ export interface Task {
     nodeId: string;
     title: string;
     credit: number; // integer
-    isDone: boolean;
-    isArchived: boolean;
+    progress: number; // 0.0 - 1.0
+    completionDate?: string | null; // YYYY-MM-DD
     tags?: string[];
     sourceRef?: string;
     note?: string;
