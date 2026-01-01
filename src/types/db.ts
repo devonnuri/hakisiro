@@ -14,6 +14,7 @@ export interface Task {
     title: string;
     credit: number; // integer
     progress: number; // 0 - 10
+    order: number; // For sorting
     completionDate?: string | null; // YYYY-MM-DD
     tags?: string[];
     sourceRef?: string;

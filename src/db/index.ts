@@ -106,6 +106,31 @@ export class HakisiroDB extends Dexie {
                 }
             });
         });
+
+        // Migration to v5: Add 'order' to tasks
+        this.version(5)
+            .stores({
+                tasks: 'id, nodeId, progress, completionDate, order, [nodeId+progress], [nodeId+order]'
+            })
+            .upgrade(async tx => {
+                // Populate order based on createdAt or just index
+                const tasks = await tx.table('tasks').toArray();
+                // Group by nodeId to order reasonably
+                const byNode: Record<string, any[]> = {};
+                for (const t of tasks) {
+                    if (!byNode[t.nodeId]) byNode[t.nodeId] = [];
+                    byNode[t.nodeId].push(t);
+                }
+
+                for (const nodeId in byNode) {
+                    // Sort by createdAt
+                    const nodeTasks = byNode[nodeId].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                    for (let i = 0; i < nodeTasks.length; i++) {
+                        // Update order
+                        await tx.table('tasks').update(nodeTasks[i].id, { order: i });
+                    }
+                }
+            });
     }
 }
 

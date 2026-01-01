@@ -13,7 +13,7 @@
   color: var(--text-primary);
   padding: 4px 8px;
   font-weight: bold;
-  text-transform: uppercase;
+  text-transform: lowercase;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
@@ -21,7 +21,7 @@
 }
 
 .panel-content {
-  padding: 8px;
+  padding: 6px;
   flex: 1;
   overflow: auto;
 }
@@ -32,7 +32,7 @@
   color: var(--text-primary);
   padding: 4px 12px;
   cursor: pointer;
-  text-transform: uppercase;
+  text-transform: lowercase;
   font-size: 0.9em;
   transition: all 0.1s;
 }

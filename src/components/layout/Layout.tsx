@@ -43,7 +43,7 @@ export const Layout: React.FC = () => {
             fontWeight: 'bold'
           }}
         >
-          /today
+          today
         </NavLink>
         <NavLink
           to="/pool"
@@ -55,7 +55,7 @@ export const Layout: React.FC = () => {
             fontWeight: 'bold'
           }}
         >
-          /pool
+          pool
         </NavLink>
         <NavLink
           to="/analytics"
@@ -67,11 +67,11 @@ export const Layout: React.FC = () => {
             fontWeight: 'bold'
           }}
         >
-          /analytics
+          analytics
         </NavLink>
         <div style={{ flex: 1 }} />
         <Button onClick={() => setShowSettings(true)} style={{ margin: '0 8px', border: 'none' }}>
-          [:]
+          settings
         </Button>
       </nav>
 

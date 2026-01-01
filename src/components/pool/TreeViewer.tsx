@@ -42,7 +42,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
   const isCreatingChild = creatingParentId === node.id;
 
   return (
-    <div style={{ marginLeft: level * 16 }}>
+    <div style={{ marginLeft: 16 * Math.min(level, 1) }}>
       <div
         className={clsx('node-row', isSelected && 'selected')}
         style={{
@@ -61,7 +61,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             toggleExpand(node.id);
           }}
         >
-          {hasChildren ? (isExpanded ? '[-]' : '[+]') : ' . '}
+          {hasChildren ? (isExpanded ? '∨' : '∧') : ' . '}
         </div>
         <div style={{ fontWeight: 'bold' }}>{node.code}</div>
         <div style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>{node.name}</div>
@@ -102,44 +102,55 @@ const NodeItem: React.FC<NodeItemProps> = ({
 };
 
 // Inline Edit component
-const EditBox: React.FC<{ onSave: (val: string) => void; onCancel: () => void }> = ({
+const EditBox: React.FC<{
+  initialValue?: string;
+  onSave: (val: string) => void;
+  onCancel: () => void
+}> = ({
+  initialValue = '',
   onSave,
   onCancel
 }) => {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    ref.current?.focus();
-  }, []);
+    const ref = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+      if (ref.current) {
+        ref.current.value = initialValue;
+        ref.current.focus();
+        ref.current.select();
+      }
+    }, []); // Run once on mount
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (ref.current?.value.trim()) onSave(ref.current.value.trim());
-      else onCancel();
-    } else if (e.key === 'Escape') {
-      onCancel();
-    }
-  };
-
-  return (
-    <input
-      ref={ref}
-      type="text"
-      placeholder="Node Name..."
-      onKeyDown={handleKeyDown}
-      onBlur={() => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
         if (ref.current?.value.trim()) onSave(ref.current.value.trim());
         else onCancel();
-      }}
-      style={{
-        background: 'var(--bg-color)',
-        color: 'var(--text-primary)',
-        border: '1px solid var(--accent-color)',
-        width: '150px',
-        fontFamily: 'inherit'
-      }}
-    />
-  );
-};
+      } else if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    return (
+      <input
+        ref={ref}
+        type="text"
+        placeholder="Node Name..."
+        onKeyDown={handleKeyDown}
+        onBlur={() => {
+          // Blur might trigger before click handling?
+          // Usually safe to save on blur for "click away to save"
+          if (ref.current?.value.trim()) onSave(ref.current.value.trim());
+          else onCancel();
+        }}
+        style={{
+          background: 'var(--bg-color)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--accent-color)',
+          width: '150px',
+          fontFamily: 'inherit'
+        }}
+      />
+    );
+  };
 
 export const TreeViewer: React.FC = () => {
   const nodes = useLiveQuery(() => db.nodes.toArray());
@@ -179,8 +190,8 @@ export const TreeViewer: React.FC = () => {
       const parentId = creatingParentId === 'ROOT' ? null : creatingParentId;
       // Auto-generate code
       let code = name
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
         .substring(0, 6);
       // Ensure uniqueness (simple retry or fallback to random)
       const exists = await db.nodes.where('code').equals(code).count();
@@ -234,33 +245,49 @@ export const TreeViewer: React.FC = () => {
       <Panel
         title="Node Tree"
         className="tree-panel"
-        actions={<Button onClick={handleStartCreateRoot}>+ Root</Button>}
+        style={{
+          flex: '0 0 300px',
+          width: '300px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+        actions={
+          <Button
+            onClick={() => {
+              if (selectedNode) handleStartCreateChild();
+              else handleStartCreateRoot();
+            }}
+          >
+            +
+          </Button>
+        }
       >
-        <div className="tree-content">
+        <div className="tree-content" style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
           {!nodes || nodes.length === 0
             ? creatingParentId !== 'ROOT' && (
-                <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
-                  No nodes. Create a root.
-                </div>
-              )
+              <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
+                No nodes. Create a root.
+              </div>
+            )
             : rootNodes.map((node) => (
-                <NodeItem
-                  key={node.id}
-                  node={node}
-                  level={0}
-                  childNodes={nodes
-                    .filter((n) => n.parentId === node.id)
-                    .sort((a, b) => a.order - b.order)}
-                  allNodes={nodes}
-                  onSelect={setSelectedNode}
-                  selectedId={selectedNode?.id}
-                  expandedIds={expandedIds}
-                  toggleExpand={toggleExpand}
-                  creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
-                  onConfirmCreate={handleConfirmCreate}
-                  onCancelCreate={() => setCreatingParentId(null)}
-                />
-              ))}
+              <NodeItem
+                key={node.id}
+                node={node}
+                level={0}
+                childNodes={nodes
+                  .filter((n) => n.parentId === node.id)
+                  .sort((a, b) => a.order - b.order)}
+                allNodes={nodes}
+                onSelect={setSelectedNode}
+                selectedId={selectedNode?.id}
+                expandedIds={expandedIds}
+                toggleExpand={toggleExpand}
+                creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
+                onConfirmCreate={handleConfirmCreate}
+                onCancelCreate={() => setCreatingParentId(null)}
+              />
+            ))}
 
           {creatingParentId === 'ROOT' && (
             <div style={{ padding: '2px 4px' }}>
@@ -276,9 +303,6 @@ export const TreeViewer: React.FC = () => {
             title={`Node: ${selectedNode.code}`}
             actions={
               <div style={{ display: 'flex', gap: 8 }}>
-                <Button onClick={handleStartCreateChild} style={{ fontSize: '0.8em' }}>
-                  + Child
-                </Button>
                 <Button
                   onClick={handleDeleteNode}
                   style={{ fontSize: '0.8em', borderColor: '#d32f2f', color: '#d32f2f' }}

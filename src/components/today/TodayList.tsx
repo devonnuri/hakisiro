@@ -32,7 +32,7 @@ const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemo
         <div style={{ flex: 1 }}>
           <div>{task.title}</div>
           <div className="text-dim" style={{ fontSize: '0.8em' }}>
-            Credit: {task.credit}
+            &copy;{task.credit}
           </div>
         </div>
 
@@ -201,8 +201,39 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
     await LedgerService.logProgressDelta(date, task.id, delta);
   };
 
-  const handleRemove = async (itemId?: number) => {
-    if (itemId) await db.todayItems.delete(itemId);
+  const handleRemove = async (itemId: number | undefined, task: Task | undefined) => {
+    if (!itemId) return;
+
+    // Logic: Revert progress made today
+    if (task) {
+      const logId = `${date}:${task.id}`;
+      const log = await db.logEntries.get(logId);
+
+      if (log) {
+        // Revert progress
+        // log.weight is the sum of deltas for this day.
+        // If we remove the task from today, we undo all progress made today.
+        const currentProgress = task.progress;
+        const delta = log.weight;
+        const newProgress = Math.max(0, currentProgress - delta); // Prevent negative
+
+        const updates: any = { progress: newProgress };
+
+        // Manage completionDate
+        if (currentProgress >= 10 && newProgress < 10) {
+          // If it was completed, and reverting makes it uncompleted
+          updates.completionDate = null;
+        }
+        // Note: If task was completed yesterday, log.weight for today should be 0 (unless we did something).
+        // If log.weight is 0, newProgress == currentProgress. completionDate logic safely ignored (>=10 && <10 false).
+
+        await TaskService.updateTask(task.id, updates);
+        await db.logEntries.delete(logId);
+        await LedgerService.recomputeDailyStats(date); // Recalculate A/E
+      }
+    }
+
+    await db.todayItems.delete(itemId);
   };
 
   if (!items || !tasksInfo) return <div>Loading...</div>;
@@ -221,7 +252,7 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
             log={log}
             nodeCode={nodeCode}
             onProgressChange={(val) => task && handleProgressChange(task, val)}
-            onRemove={() => handleRemove(item.id)}
+            onRemove={() => handleRemove(item.id, task)}
           />
         );
       })}

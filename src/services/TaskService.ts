@@ -4,12 +4,15 @@ import type { Task } from '../types/db';
 
 export const TaskService = {
     async createTask(nodeId: string, title: string, credit: number): Promise<string> {
+        // Get generic count for order. Concurrency might cause dupes but OK for single user.
+        const count = await db.tasks.where('nodeId').equals(nodeId).count();
         const newTask: Task = {
             id: uuidv4(),
             nodeId,
             title,
             credit,
             progress: 0,
+            order: count, // Append to end
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
@@ -22,6 +25,10 @@ export const TaskService = {
             ...updates,
             updatedAt: Date.now()
         });
+    },
+
+    async deleteTask(id: string): Promise<void> {
+        await db.tasks.delete(id);
     },
 
     // Archive concept removed per request, or strictly filtered via UI?

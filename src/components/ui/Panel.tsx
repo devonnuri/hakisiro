@@ -6,11 +6,12 @@ interface PanelProps {
   children: React.ReactNode;
   className?: string;
   actions?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
-export const Panel: React.FC<PanelProps> = ({ title, children, className, actions }) => {
+export const Panel: React.FC<PanelProps> = ({ title, children, className, actions, style }) => {
   return (
-    <div className={clsx('panel', className)}>
+    <div className={clsx('panel', className)} style={style}>
       {(title || actions) && (
         <div className="panel-header">
           <span>{title}</span>
