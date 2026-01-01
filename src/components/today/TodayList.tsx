@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db';
 import { LedgerService } from '../../services/LedgerService';
 import { TaskService } from '../../services/TaskService';
+import { Button } from '../ui/Button';
 import { ProgressControl } from '../common/ProgressControl';
 import type { LogEntry, Task } from '../../types/db';
 
@@ -19,7 +20,7 @@ const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemo
 
   // log.weight is now "Sum of Deltas Today".
   // Activity generated today = credit * weight.
-  const activityToday = (task.credit * (log?.weight || 0)).toFixed(1);
+  const activityToday = ((task.credit * (log?.weight || 0)) / 10).toFixed(1);
 
   return (
     <div className="panel" style={{ marginBottom: 4 }}>
@@ -63,11 +64,94 @@ interface TodayListProps {
   date: string;
 }
 
+// Helper component for Search
+const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, onCancel }) => {
+  const [search, setSearch] = React.useState('');
+
+  // Fetch generic tasks + node codes
+  // Optim: Fetch all tasks & nodes? Or search?
+  // Let's fetch all tasks for filtering. 
+  const data = useLiveQuery(async () => {
+    const tasks = await db.tasks.toArray();
+    const nodes = await db.nodes.toArray();
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+    return { tasks, nodeMap };
+  }, []);
+
+  const matches = React.useMemo(() => {
+    if (!data || !search.trim()) return [];
+    const term = search.toLowerCase();
+    return data.tasks
+      .filter(t => t.title.toLowerCase().includes(term))
+      .slice(0, 5) // Limit results
+      .map(t => ({
+        ...t,
+        nodeCode: data.nodeMap.get(t.nodeId)?.code || '?'
+      }));
+  }, [data, search]);
+
+  const handleSelect = async (task: Task) => {
+    // Add to Today
+    // Check duplicates
+    const exists = await db.todayItems.where('[date+taskId]').equals([date, task.id]).first();
+    if (exists) {
+      onCancel(); // Just close if exists? Or alert?
+      return;
+    }
+    const count = await db.todayItems.where('date').equals(date).count();
+    await db.todayItems.add({
+      date,
+      taskId: task.id,
+      order: count
+    });
+    onCancel(); // Close search
+  };
+
+  return (
+    <div className="panel" style={{ padding: 8 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          autoFocus
+          className="retro-input"
+          style={{ flex: 1 }}
+          placeholder="Search task..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <Button onClick={onCancel}>Cancel</Button>
+      </div>
+      {matches.length > 0 && (
+        <div style={{ marginTop: 8, borderTop: '1px solid var(--border-color)' }}>
+          {matches.map(t => (
+            <div
+              key={t.id}
+              style={{
+                padding: '8px 4px',
+                borderBottom: '1px solid var(--border-color)',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}
+              onClick={() => handleSelect(t)}
+              className="hover-bg"
+            >
+              <span>{t.title}</span>
+              <span className="text-dim" style={{ fontSize: '0.8em' }}>{t.nodeCode}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const TodayList: React.FC<TodayListProps> = ({ date }) => {
   const items = useLiveQuery(
     () => db.todayItems.where('date').equals(date).sortBy('order'),
     [date]
   );
+  const [isAdding, setIsAdding] = React.useState(false);
 
   // Complex query to resolve dependencies
   const tasksInfo = useLiveQuery(async () => {
@@ -107,9 +191,9 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
 
     const updates: any = { progress: newProgress };
 
-    if (newProgress >= 1.0 && oldProgress < 1.0) {
+    if (newProgress >= 10 && oldProgress < 10) {
       updates.completionDate = date; // Use the view's date
-    } else if (newProgress < 1.0 && oldProgress >= 1.0) {
+    } else if (newProgress < 10 && oldProgress >= 10) {
       updates.completionDate = null;
     }
 
@@ -141,11 +225,16 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
           />
         );
       })}
-      {items.length === 0 && (
-        <div className="text-dim" style={{ textAlign: 'center', marginTop: 32 }}>
-          No tasks for {date}. <br /> Go to /pool to add some.
-        </div>
-      )}
+
+      <div style={{ marginTop: 16 }}>
+        {isAdding ? (
+          <TaskSearch date={date} onCancel={() => setIsAdding(false)} />
+        ) : (
+          <Button onClick={() => setIsAdding(true)} className="full-width">
+            + Add Task
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

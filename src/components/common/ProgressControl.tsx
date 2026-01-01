@@ -8,13 +8,13 @@ interface ProgressControlProps {
 
 export const ProgressControl: React.FC<ProgressControlProps> = ({ value, onChange }) => {
   // Clamp helper
-  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  const clamp = (v: number) => Math.max(0, Math.min(10, v));
 
   // Display as raw float
-  const displayVal = value.toFixed(1);
+  const displayVal = (value / 10).toFixed(1);
 
   const handleStep = (step: number) => {
-    const next = clamp(Math.round((value + step) * 10) / 10);
+    const next = clamp(value + step);
     if (next !== value) onChange(next);
   };
 
@@ -23,7 +23,7 @@ export const ProgressControl: React.FC<ProgressControlProps> = ({ value, onChang
       <Button
         onClick={(e) => {
           e.stopPropagation();
-          handleStep(-0.1);
+          handleStep(-1);
         }}
         style={{ padding: '0px 6px', fontSize: '10px' }}
       >
@@ -33,7 +33,7 @@ export const ProgressControl: React.FC<ProgressControlProps> = ({ value, onChang
       <Button
         onClick={(e) => {
           e.stopPropagation();
-          handleStep(0.1);
+          handleStep(1);
         }}
         style={{ padding: '0px 6px', fontSize: '10px' }}
       >

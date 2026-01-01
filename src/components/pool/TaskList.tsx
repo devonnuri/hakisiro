@@ -33,15 +33,15 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
   };
 
   const handleProgressChange = async (task: Task, newProgress: number) => {
-    const oldProgress = task.progress || 0; // Handle migration case
+    const oldProgress = task.progress || 0;
     const delta = newProgress - oldProgress;
     const today = new Date().toISOString().split('T')[0];
 
     const updates: any = { progress: newProgress };
 
-    if (newProgress >= 1.0 && oldProgress < 1.0) {
+    if (newProgress >= 10 && oldProgress < 10) {
       updates.completionDate = today;
-    } else if (newProgress < 1.0 && oldProgress >= 1.0) {
+    } else if (newProgress < 10 && oldProgress >= 10) {
       updates.completionDate = null;
     }
 
@@ -49,21 +49,13 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
     await LedgerService.logProgressDelta(today, task.id, delta);
   };
 
-  const handleAddToToday = async (task: Task) => {
-    // Check if added today
-    const date = new Date().toISOString().split('T')[0];
-    const exists = await db.todayItems.where('[date+taskId]').equals([date, task.id]).first();
-    if (exists) {
-      alert("Already in Today's list");
-      return;
+
+
+  const handleCreditChange = async (task: Task, newCredit: string) => {
+    const val = parseInt(newCredit);
+    if (!isNaN(val) && val > 0) {
+      await TaskService.updateTask(task.id, { credit: val });
     }
-    const count = await db.todayItems.where('date').equals(date).count();
-    await db.todayItems.add({
-      date,
-      taskId: task.id,
-      order: count
-    });
-    // Feedback?
   };
 
   if (!tasks) return <div>Loading tasks...</div>;
@@ -108,7 +100,7 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
 
       <div className="flex-col">
         {tasks.map((task) => {
-          const isDone = task.progress >= 1.0;
+          const isDone = task.progress >= 10;
           return (
             <div
               key={task.id}
@@ -119,12 +111,6 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
               }}
             >
               <div className="panel-content flex-row" style={{ alignItems: 'center' }}>
-                <div style={{ marginRight: 8 }}>
-                  <ProgressControl
-                    value={task.progress || 0}
-                    onChange={(val) => handleProgressChange(task, val)}
-                  />
-                </div>
                 <div
                   style={{
                     flex: 1,
@@ -134,15 +120,32 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                 >
                   {task.title}
                 </div>
-                <div title="Credits" style={{ marginRight: 8 }}>
-                  ({task.credit})
+
+                <div style={{ marginRight: 8 }}>
+                  <ProgressControl
+                    value={task.progress || 0}
+                    onChange={(val) => handleProgressChange(task, val)}
+                  />
                 </div>
-                <Button
-                  onClick={() => handleAddToToday(task)}
-                  style={{ fontSize: '0.8em', padding: '2px 4px' }}
-                >
-                  To Today
-                </Button>
+
+                <div title="Credits" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>Cr:</span>
+                  <input
+                    type="number"
+                    value={task.credit}
+                    onChange={(e) => handleCreditChange(task, e.target.value)}
+                    className="retro-input"
+                    style={{
+                      width: 40,
+                      padding: '2px 4px',
+                      textAlign: 'center',
+                      border: 'none',
+                      borderBottom: '1px solid var(--border-color)',
+                      background: 'transparent'
+                    }}
+                    min={1}
+                  />
+                </div>
               </div>
             </div>
           );
