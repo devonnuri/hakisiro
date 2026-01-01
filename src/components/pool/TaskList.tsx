@@ -74,7 +74,7 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                 onChange={(e) => setNewTitle(e.target.value)}
               />
               <div className="flex-row">
-                <label>Cr:</label>
+                <label>Credit:</label>
                 <input
                   type="number"
                   className="retro-input"
@@ -121,15 +121,8 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                   {task.title}
                 </div>
 
-                <div style={{ marginRight: 8 }}>
-                  <ProgressControl
-                    value={task.progress || 0}
-                    onChange={(val) => handleProgressChange(task, val)}
-                  />
-                </div>
-
                 <div title="Credits" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>Cr:</span>
+                  <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>Credit:</span>
                   <input
                     type="number"
                     value={task.credit}
@@ -145,6 +138,9 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                     }}
                     min={1}
                   />
+                  <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>
+                    &nbsp;* {(task.progress / 10).toFixed(1)}
+                  </span>
                 </div>
               </div>
             </div>

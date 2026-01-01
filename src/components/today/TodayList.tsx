@@ -32,7 +32,7 @@ const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemo
         <div style={{ flex: 1 }}>
           <div>{task.title}</div>
           <div className="text-dim" style={{ fontSize: '0.8em' }}>
-            Cr: {task.credit}
+            Credit: {task.credit}
           </div>
         </div>
 
