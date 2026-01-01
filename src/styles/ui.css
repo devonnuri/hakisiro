@@ -1,86 +1,86 @@
 /* Retro UI Components */
 
 .panel {
-    border: 1px solid var(--border-color);
-    background: var(--panel-bg);
-    display: flex;
-    flex-direction: column;
-    margin-bottom: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--spacing-md);
 }
 
 .panel-header {
-    background: var(--highlight-color);
-    color: var(--text-primary);
-    padding: 4px 8px;
-    font-weight: bold;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  background: var(--highlight-color);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .panel-content {
-    padding: 8px;
-    flex: 1;
-    overflow: auto;
+  padding: 8px;
+  flex: 1;
+  overflow: auto;
 }
 
 .retro-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 4px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    font-size: 0.9em;
-    transition: all 0.1s;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  transition: all 0.1s;
 }
 
 .retro-btn:hover {
-    background: var(--highlight-color);
-    color: var(--accent-color);
-    border-color: var(--accent-color);
+  background: var(--highlight-color);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
 }
 
 .retro-btn:active {
-    transform: translateY(1px);
+  transform: translateY(1px);
 }
 
 .retro-input {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 4px 8px;
-    width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  width: 100%;
 }
 
 .retro-input:focus {
-    outline: none;
-    border-color: var(--accent-color);
+  outline: none;
+  border-color: var(--accent-color);
 }
 
 /* Utils */
 .flex-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .flex-col {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .full-width {
-    width: 100%;
+  width: 100%;
 }
 
 .text-accent {
-    color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .text-dim {
-    color: var(--text-secondary);
+  color: var(--text-secondary);
 }

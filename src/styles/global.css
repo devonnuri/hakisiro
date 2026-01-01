@@ -1,60 +1,59 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&display=swap');
 @import './ui.css';
 
-
 :root {
-    --bg-color: #111111;
-    --panel-bg: #000000;
-    --text-primary: #e5e5e5;
-    --text-secondary: #888888;
-    --accent-color: #4caf50;
-    /* Retro Green */
-    --highlight-color: #333333;
-    --border-color: #333333;
+  --bg-color: #111111;
+  --panel-bg: #000000;
+  --text-primary: #e5e5e5;
+  --text-secondary: #888888;
+  --accent-color: #4caf50;
+  /* Retro Green */
+  --highlight-color: #333333;
+  --border-color: #333333;
 
-    --font-main: 'JetBrains Mono', monospace;
+  --font-main: 'JetBrains Mono', monospace;
 
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    font-family: var(--font-main);
-    font-variant-numeric: tabular-nums;
-    -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
 input,
 textarea,
 select {
-    font-family: inherit;
+  font-family: inherit;
 }
 
 /* Scrollbar styling for desktop */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-color);
+  background: var(--bg-color);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+  background: var(--border-color);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+  background: var(--text-secondary);
 }
