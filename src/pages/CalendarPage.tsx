@@ -37,10 +37,14 @@ export const CalendarPage: React.FC = () => {
     return db.dailyStats.where('date').between(startStr, endStr, true, true).toArray();
   }, [monthStart, monthEnd]);
 
-  const statsMap = useMemo(() => {
+  const { statsMap, maxA } = useMemo(() => {
     const map: Record<string, { A: number; E: number }> = {};
-    stats?.forEach((s: any) => (map[s.date] = { A: s.A, E: s.E }));
-    return map;
+    let max = 0;
+    stats?.forEach((s: any) => {
+      map[s.date] = { A: s.A, E: s.E };
+      if (s.A > max) max = s.A;
+    });
+    return { statsMap: map, maxA: max };
   }, [stats]);
 
   return (
@@ -101,16 +105,30 @@ export const CalendarPage: React.FC = () => {
             const stat = statsMap[dateStr];
             const isTodayDate = isToday(day);
 
+            // Heatmap logic
+            // Use simple green scale. Intensity 0.0 - 1.0
+            // activity / maxA
+            let background = 'var(--panel-bg)';
+            if (stat && stat.A > 0 && maxA > 0) {
+              const intensity = Math.min(1, stat.A / maxA);
+              // Dark green base (e.g. 0,50,0) to Bright green (0,255,0)?
+              // Or use opacity overlay.
+              // Let's use rgba(0, 255, 0, alpha). 
+              // alpha = 0.1 + 0.4 * intensity?
+              background = `rgba(0, 255, 0, ${0.1 + intensity * 0.4})`;
+            }
+
             return (
               <div
                 key={dateStr}
                 style={{
-                  background: 'var(--panel-bg)',
+                  background: background,
                   padding: '8px',
                   minHeight: '80px',
                   cursor: 'pointer',
                   border: isTodayDate ? '2px solid var(--accent-color)' : 'none',
-                  position: 'relative'
+                  position: 'relative',
+                  color: stat && stat.A > 0 ? '#fff' : 'inherit' // Ensure text is readable
                 }}
                 onClick={() => navigate(`/day/${dateStr}`)}
               >
@@ -121,8 +139,8 @@ export const CalendarPage: React.FC = () => {
                   <div
                     style={{ fontSize: '0.8em', display: 'flex', flexDirection: 'column', gap: 2 }}
                   >
-                    <div style={{ color: 'var(--accent-color)' }}>A: {stat.A.toFixed(1)}</div>
-                    <div style={{ color: 'var(--text-secondary)' }}>E: {stat.E}</div>
+                    <div>A: {stat.A.toFixed(1)}</div>
+                    <div style={{ opacity: 0.8 }}>E: {stat.E}</div>
                   </div>
                 )}
               </div>

@@ -47,7 +47,10 @@ export const DayPage: React.FC = () => {
     >
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 16 }}>
         <Button onClick={() => handleNav(-1)}>&lt; Prev</Button>
-        <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold' }}>
+        <div
+          style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', cursor: 'pointer' }}
+          onClick={() => navigate('/calendar')}
+        >
           {dateStr} {isToday && '(Today)'}
         </div>
         <Button onClick={() => handleNav(1)}>Next &gt;</Button>
