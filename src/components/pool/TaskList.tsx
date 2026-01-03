@@ -147,7 +147,9 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                 marginBottom: 2,
                 borderColor: isDone ? 'var(--text-secondary)' : 'var(--border-color)',
                 opacity: draggedId === task.id ? 0.5 : 1,
-                cursor: 'grab'
+                cursor: 'grab',
+                // Progress coloring
+                background: `linear-gradient(to right, var(--highlight-color) ${(task.progress / 10) * 100}%, transparent ${(task.progress / 10) * 100}%)`
               }}
             >
               <div className="panel-content flex-row" style={{ alignItems: 'center' }}>

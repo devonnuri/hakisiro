@@ -8,6 +8,7 @@ import { Panel } from '../ui/Panel';
 import { Input } from '../ui/Input';
 import { TaskList } from './TaskList';
 import clsx from 'clsx';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface NodeItemProps {
   node: TreeNode;
@@ -21,6 +22,7 @@ interface NodeItemProps {
   creatingParentId: string | null;
   onConfirmCreate: (name: string) => void;
   onCancelCreate: () => void;
+  nodeStats?: Map<string, { current: number, max: number }>;
 }
 
 const NodeItem: React.FC<NodeItemProps> = ({
@@ -34,12 +36,45 @@ const NodeItem: React.FC<NodeItemProps> = ({
   toggleExpand,
   creatingParentId,
   onConfirmCreate,
-  onCancelCreate
+  onCancelCreate,
+  nodeStats
 }) => {
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedId === node.id;
   const hasChildren = childNodes.length > 0;
   const isCreatingChild = creatingParentId === node.id;
+
+  const stats = nodeStats?.get(node.id);
+  const progressPercent = stats && stats.max > 0 ? (stats.current / stats.max) * 100 : 0;
+  // If selected, maybe mix colors? simpler to just layer.
+  // Selection uses background color. Gradient overrides background-color?
+  // Use background-image for gradient, background-color for selection?
+  // But wait, standard CSS: background sets all. 
+  // Let's use a pseudo-element or just simple gradient logic.
+  // User: "color with primary color in the ratio"
+
+  // If selected, we might want it brighter?
+  // Let's use the gradient as the base, and add a border or outline if selected?
+  // Or: Selection adds a full highlight, progress adds a partial tint?
+  // Let's keep it simple: Gradient IS the background. Selection is an outline or text color change?
+  // Current selection: background: var(--highlight-color).
+  // Problem: --highlight-color is opaque usually.
+
+  // Strategy: 
+  // background: linear-gradient(to right, var(--highlight-color) P%, transparent P%)
+  // If selected, maybe just border? Or change the "transparent" part to "highlight-dim"?
+  // Let's try: Overlay selection style via class.
+  // Actually, user wants primary color.
+
+  const bgStyle = {
+    background: `linear-gradient(to right, var(--highlight-color) ${progressPercent}%, transparent ${progressPercent}%)`
+  };
+
+  if (isSelected) {
+    // If selected, maybe make the WHOLE background highlight, but darker?
+    // Or maybe just use a distinct border.
+    // Let's stick to gradient, but if selected, maybe add a border.
+  }
 
   return (
     <div style={{ marginLeft: 16 * Math.min(level, 1) }}>
@@ -50,9 +85,13 @@ const NodeItem: React.FC<NodeItemProps> = ({
           alignItems: 'center',
           padding: '2px 4px',
           cursor: 'pointer',
-          background: isSelected ? 'var(--highlight-color)' : 'transparent'
+          border: isSelected ? '1px solid var(--accent-color)' : '1px solid transparent',
+          ...bgStyle
         }}
-        onClick={() => onSelect(node)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(node);
+        }}
       >
         <div
           style={{ width: 16, textAlign: 'center', marginRight: 4, cursor: 'pointer' }}
@@ -61,7 +100,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             toggleExpand(node.id);
           }}
         >
-          {hasChildren ? (isExpanded ? '∨' : '∧') : ' . '}
+          {hasChildren ? (isExpanded ? '∨' : '∧') : '·'}
         </div>
         <div style={{ fontWeight: 'bold' }}>{node.code}</div>
         <div style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>{node.name}</div>
@@ -87,6 +126,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
                 creatingParentId={creatingParentId}
                 onConfirmCreate={onConfirmCreate}
                 onCancelCreate={onCancelCreate}
+                nodeStats={nodeStats}
               />
             );
           })}
@@ -154,11 +194,47 @@ const EditBox: React.FC<{
 
 export const TreeViewer: React.FC = () => {
   const nodes = useLiveQuery(() => db.nodes.toArray());
+  const tasks = useLiveQuery(() => db.tasks.toArray());
+
+  // Calculate Node Stats Map
+  // Map<NodeId, { current: number, max: number }>
+  const nodeStats = useMemo(() => {
+    const stats = new Map<string, { current: number, max: number }>();
+    if (!tasks) return stats;
+
+    for (const t of tasks) {
+      if (!stats.has(t.nodeId)) stats.set(t.nodeId, { current: 0, max: 0 });
+      const s = stats.get(t.nodeId)!;
+      s.current += (t.progress || 0) * t.credit;
+      s.max += 10 * t.credit;
+    }
+    return stats;
+  }, [tasks]);
+
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // Creation State
   const [creatingParentId, setCreatingParentId] = useState<string | null | 'ROOT'>(null); // 'ROOT' for creating root
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedNode(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Default Expand All Logic
+  useEffect(() => {
+    if (nodes && nodes.length > 0) {
+      setExpandedIds(prev => {
+        if (prev.size > 0) return prev; // Already interacted or loaded
+        const allIds = new Set(nodes.map(n => n.id));
+        return allIds;
+      });
+    }
+  }, [nodes]);
 
   const rootNodes = useMemo(() => {
     if (!nodes) return [];
@@ -207,17 +283,6 @@ export const TreeViewer: React.FC = () => {
     }
   };
 
-  const handleDeleteNode = async () => {
-    if (!selectedNode) return;
-    if (!confirm(`Delete node "${selectedNode.name}" and all its data?`)) return;
-    try {
-      await NodeService.deleteNode(selectedNode.id);
-      setSelectedNode(null);
-    } catch (e: any) {
-      alert(e.message);
-    }
-  };
-
   // Editing Code/Name in Details
   // We need local state for inputs to allow editing
   const [editName, setEditName] = useState('');
@@ -231,6 +296,17 @@ export const TreeViewer: React.FC = () => {
     }
   }, [selectedNode]);
 
+  const handleDeleteNode = async () => {
+    if (!selectedNode) return;
+    if (!confirm(`Delete node "${selectedNode.name}" and all its data?`)) return;
+    try {
+      await NodeService.deleteNode(selectedNode.id);
+      setSelectedNode(null);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   const handleUpdateDetails = async () => {
     if (!selectedNode) return;
     try {
@@ -240,107 +316,147 @@ export const TreeViewer: React.FC = () => {
     }
   };
 
+  // Responsive Logic
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isCreating = creatingParentId !== null;
+
+  // If mobile:
+  // - If creating, Show Tree (so user can type name).
+  // - Else if selectedNode, Show Details.
+  // - Else Show Tree.
+
+  const showTree = !isMobile || isCreating || !selectedNode;
+  const showDetails = !isMobile || (!!selectedNode && !isCreating);
+
   return (
     <div style={{ display: 'flex', gap: '16px', height: '100%', flexDirection: 'row' }}>
-      <Panel
-        title="Node Tree"
-        className="tree-panel"
-        style={{
-          flex: '0 0 300px',
-          width: '300px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-        actions={
-          <Button
-            onClick={() => {
-              if (selectedNode) handleStartCreateChild();
-              else handleStartCreateRoot();
-            }}
+      {showTree && (
+        <Panel
+          title="Node Tree"
+          className="tree-panel"
+          style={{
+            flex: isMobile ? '1' : '0 0 300px',
+            width: isMobile ? '100%' : '300px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+          actions={
+            <Button
+              onClick={() => {
+                if (selectedNode) handleStartCreateChild();
+                else handleStartCreateRoot();
+              }}
+            >
+              +
+            </Button>
+          }
+        >
+          <div
+            className="tree-content"
+            style={{ whiteSpace: 'nowrap', minWidth: 'fit-content', minHeight: '100%' }}
+            onClick={() => setSelectedNode(null)}
           >
-            +
-          </Button>
-        }
-      >
-        <div className="tree-content" style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
-          {!nodes || nodes.length === 0
-            ? creatingParentId !== 'ROOT' && (
-              <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
-                No nodes. Create a root.
-              </div>
-            )
-            : rootNodes.map((node) => (
-              <NodeItem
-                key={node.id}
-                node={node}
-                level={0}
-                childNodes={nodes
-                  .filter((n) => n.parentId === node.id)
-                  .sort((a, b) => a.order - b.order)}
-                allNodes={nodes}
-                onSelect={setSelectedNode}
-                selectedId={selectedNode?.id}
-                expandedIds={expandedIds}
-                toggleExpand={toggleExpand}
-                creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
-                onConfirmCreate={handleConfirmCreate}
-                onCancelCreate={() => setCreatingParentId(null)}
-              />
-            ))}
+            {!nodes || nodes.length === 0
+              ? creatingParentId !== 'ROOT' && (
+                <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
+                  No nodes. Create a root.
+                </div>
+              )
+              : rootNodes.map((node) => (
+                <NodeItem
+                  key={node.id}
+                  node={node}
+                  level={0}
+                  childNodes={nodes
+                    .filter((n) => n.parentId === node.id)
+                    .sort((a, b) => a.order - b.order)}
+                  allNodes={nodes}
+                  onSelect={setSelectedNode}
+                  selectedId={selectedNode?.id}
+                  expandedIds={expandedIds}
+                  toggleExpand={toggleExpand}
+                  creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
+                  onConfirmCreate={handleConfirmCreate}
+                  onCancelCreate={() => setCreatingParentId(null)}
+                  nodeStats={nodeStats}
+                />
+              ))}
 
-          {creatingParentId === 'ROOT' && (
-            <div style={{ padding: '2px 4px' }}>
-              <EditBox onSave={handleConfirmCreate} onCancel={() => setCreatingParentId(null)} />
-            </div>
+            {creatingParentId === 'ROOT' && (
+              <div style={{ padding: '2px 4px' }}>
+                <EditBox onSave={handleConfirmCreate} onCancel={() => setCreatingParentId(null)} />
+              </div>
+            )}
+          </div>
+        </Panel>
+      )}
+
+      {showDetails && (
+        <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300 }}>
+          {selectedNode ? (
+            <Panel
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {isMobile && (
+                    <Button onClick={() => setSelectedNode(null)} style={{ padding: '0 8px' }}>
+                      ←
+                    </Button>
+                  )}
+                  {`Node: ${selectedNode.code}`}
+                </div>
+              }
+              actions={
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {isMobile && (
+                    <Button
+                      onClick={handleStartCreateChild}
+                      style={{ fontSize: '0.8em' }}
+                      title="Add Child Node"
+                    >
+                      +
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleDeleteNode}
+                    style={{ fontSize: '0.8em', borderColor: '#d32f2f', color: '#d32f2f' }}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              }
+            >
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Input
+                    label="Name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={handleUpdateDetails}
+                  />
+                  <Input
+                    label="Code"
+                    value={editCode}
+                    onChange={(e) => setEditCode(e.target.value)}
+                    onBlur={handleUpdateDetails}
+                  />
+                  <div className="text-dim" style={{ fontSize: '0.8em' }}>
+                    {selectedNode.id}
+                  </div>
+                </div>
+
+                <TaskList nodeId={selectedNode.id} />
+              </div>
+            </Panel>
+          ) : (
+            <Panel title="Details">
+              <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
+                Select a node to view tasks.
+              </div>
+            </Panel>
           )}
         </div>
-      </Panel>
-
-      <div style={{ flex: 1, minWidth: 300 }}>
-        {selectedNode ? (
-          <Panel
-            title={`Node: ${selectedNode.code}`}
-            actions={
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button
-                  onClick={handleDeleteNode}
-                  style={{ fontSize: '0.8em', borderColor: '#d32f2f', color: '#d32f2f' }}
-                >
-                  Delete
-                </Button>
-              </div>
-            }
-          >
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <Input
-                  label="Name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onBlur={handleUpdateDetails}
-                />
-                <Input
-                  label="Code"
-                  value={editCode}
-                  onChange={(e) => setEditCode(e.target.value)}
-                  onBlur={handleUpdateDetails}
-                />
-                <div className="text-dim" style={{ fontSize: '0.8em' }}>
-                  {selectedNode.id}
-                </div>
-              </div>
-              <TaskList nodeId={selectedNode.id} />
-            </div>
-          </Panel>
-        ) : (
-          <Panel title="Details">
-            <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
-              Select a node to view tasks.
-            </div>
-          </Panel>
-        )}
-      </div>
+      )}
     </div>
   );
 };
