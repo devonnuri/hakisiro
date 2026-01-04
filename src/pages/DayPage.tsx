@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DailyHUD } from '../components/today/DailyHUD';
+import { DailyMemo } from '../components/today/DailyMemo';
 import { TodayList } from '../components/today/TodayList';
 import { Button } from '../components/ui/Button';
 import { format, addDays, parseISO, isValid } from 'date-fns';
@@ -57,6 +58,7 @@ export const DayPage: React.FC = () => {
       </div>
 
       <DailyHUD date={dateStr} />
+      <DailyMemo date={dateStr} />
       <TodayList date={dateStr} />
     </div>
   );

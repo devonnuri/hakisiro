@@ -6,6 +6,7 @@ import type {
     TodayItem,
     LogEntry,
     DailyStats,
+    DailyMemo,
     Meta
 } from '../types/db';
 
@@ -16,6 +17,7 @@ export class HakisiroDB extends Dexie {
     todayItems!: Table<TodayItem>;
     logEntries!: Table<LogEntry>;
     dailyStats!: Table<DailyStats>;
+    dailyMemos!: Table<DailyMemo>;
     meta!: Table<Meta>;
 
     constructor() {
@@ -131,6 +133,18 @@ export class HakisiroDB extends Dexie {
                     }
                 }
             });
+
+        // Migration to v6: add dailyMemos table for per-day notes
+        this.version(6).stores({
+            nodes: 'id, parentId, [parentId+order], &code',
+            tasks: 'id, nodeId, progress, completionDate, order, [nodeId+progress], [nodeId+order]',
+            taskPrereqs: '++id, taskId, prereqTaskId, [taskId+prereqTaskId]',
+            todayItems: '++id, date, taskId, [date+order], [date+taskId]',
+            logEntries: 'id, date, taskId, [date+taskId], updatedAt',
+            dailyStats: 'date, updatedAt',
+            dailyMemos: 'date',
+            meta: 'key'
+        });
     }
 }
 

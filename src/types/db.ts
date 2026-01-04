@@ -54,6 +54,12 @@ export interface DailyStats {
     updatedAt: number;
 }
 
+export interface DailyMemo {
+    date: string; // YYYY-MM-DD, pk
+    content: string;
+    updatedAt: number;
+}
+
 export interface Meta {
     key: string;
     value: any;
