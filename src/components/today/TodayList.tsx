@@ -36,8 +36,13 @@ const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemo
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ProgressControl value={task.progress} onChange={onProgressChange} />
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ProgressControl value={task.progress} onChange={onProgressChange} />
+          </div>
+          <div style={{ fontSize: '0.8em', fontWeight: 'normal' }}>
+            ({(log?.weight || 0) > 0 ? '+' : ''}{((log?.weight || 0) / 10).toFixed(1)})
+          </div>
         </div>
 
         <div

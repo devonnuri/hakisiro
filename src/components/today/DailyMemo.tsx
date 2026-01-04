@@ -36,13 +36,13 @@ export const DailyMemo: React.FC<DailyMemoProps> = ({ date }) => {
   }, [text, date, memo, hydrated]);
 
   const helper = savedAt
-    ? `Saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    : 'Auto-saves';
+    ? `saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : 'auto-saves';
 
   return (
     <div className="panel" style={{ marginBottom: 16, padding: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ fontWeight: 'bold' }}>Daily memo</div>
+        <div style={{ fontWeight: 'bold' }}>daily memo</div>
         <div className="text-dim" style={{ fontSize: '0.85em' }}>{helper}</div>
       </div>
       <textarea
