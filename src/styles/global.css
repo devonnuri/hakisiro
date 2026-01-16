@@ -2,13 +2,13 @@
 @import './ui.css';
 
 :root {
-  --bg-color: #111111;
+  --bg-color: #000000;
   --panel-bg: #000000;
-  --text-primary: #e5e5e5;
-  --text-secondary: #888888;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
   --accent-color: #4caf50;
   /* Retro Green */
-  --highlight-color: #333333;
+  --highlight-color: #1a1a1a;
   --border-color: #333333;
 
   --font-main: 'JetBrains Mono', monospace;
