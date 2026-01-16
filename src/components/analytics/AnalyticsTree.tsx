@@ -215,9 +215,9 @@ export const AnalyticsTree: React.FC = () => {
 
   const forecastDays = useMemo(() => {
     if (!estimateEnabled) return 0;
-    if (outstanding.outE <= 0) return 0;
-    if (avgRates.avgE <= 0) return 0;
-    return Math.ceil(outstanding.outE / avgRates.avgE);
+    if (outstanding.outA <= 0) return 0;
+    if (avgRates.avgA <= 0) return 0;
+    return Math.ceil(outstanding.outA / avgRates.avgA);
   }, [estimateEnabled, outstanding, avgRates]);
 
   const finishDateStr = useMemo(() => {
