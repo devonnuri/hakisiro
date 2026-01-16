@@ -107,7 +107,6 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                 onChange={(e) => setNewTitle(e.target.value)}
               />
               <div className="flex-row">
-                <label>&copy;</label>
                 <input
                   type="number"
                   className="retro-input"
@@ -117,6 +116,7 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                   min={1}
                   step={1}
                 />
+                <label>&copy;</label>
                 <div style={{ flex: 1 }} />
                 <Button type="button" onClick={() => setIsCreating(false)}>
                   Cancel
@@ -164,7 +164,6 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                 </div>
 
                 <div title="Credits" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>&copy;</span>
                   <input
                     type="number"
                     value={task.credit}
@@ -180,6 +179,7 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                     }}
                     min={1}
                   />
+                  <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>&copy;</span>
                   <span style={{ fontSize: '0.8em', color: 'var(--text-secondary)' }}>
                     &nbsp;* {(task.progress / 10).toFixed(1)}
                   </span>
