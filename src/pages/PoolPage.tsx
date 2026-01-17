@@ -3,7 +3,7 @@ import { TreeViewer } from '../components/pool/TreeViewer';
 
 export const PoolPage: React.FC = () => {
   return (
-    <div style={{ padding: '16px', height: '100%', overflow: 'hidden' }}>
+    <div style={{ padding: '16px', minHeight: '100%', overflow: 'auto' }}>
       <TreeViewer />
     </div>
   );

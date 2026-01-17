@@ -131,7 +131,7 @@ export const PatternDetection: React.FC = () => {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(7, 1fr)',
-                  background: 'var(--border-color)',
+                  background: '#000',
                   gap: '1px'
                 }}
               >
@@ -150,8 +150,8 @@ export const PatternDetection: React.FC = () => {
                   return dayKeys.map((day) => {
                     const pattern = weekdayPatterns[day];
                     const intensity = Math.max(0, Math.min(1, pattern.avgA / maxAvg));
-                    const alpha = 0.1 + intensity * 0.7;
-                    const background = `rgba(86, 156, 214, ${alpha})`; // Match calendar accent
+                    const alpha = 0.1 + intensity * 0.9;
+                    const background = `rgba(59, 142, 234, ${alpha})`; // Match calendar accent
                     const color = intensity > 0.5 ? '#fff' : 'var(--text-primary)';
 
                     return (

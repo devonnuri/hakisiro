@@ -54,10 +54,12 @@ export const Layout: React.FC = () => {
       <main
         style={{
           flex: 1,
-          overflow: 'hidden',
+          overflow: 'auto',
+          WebkitOverflowScrolling: 'touch',
           display: 'flex',
           flexDirection: 'column',
-          padding: 'var(--spacing-md)'
+          padding: 'var(--spacing-md)',
+          minHeight: 0
         }}
       >
         <Outlet />
