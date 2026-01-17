@@ -23,7 +23,7 @@ export const DailyHUD: React.FC<DailyHUDProps> = ({ date }) => {
 
     // Check if today has any activity
     const today = new Date().toISOString().split('T')[0];
-    const hasActivityToday = sortedStats.some(s => s.date === today && (s.A > 0 || s.E > 0));
+    const hasActivityToday = sortedStats.some((s) => s.date === today && (s.A > 0 || s.E > 0));
 
     for (let i = 0; i < sortedStats.length; i++) {
       const stat = sortedStats[i];
@@ -53,7 +53,9 @@ export const DailyHUD: React.FC<DailyHUDProps> = ({ date }) => {
       const lastStat = sortedStats[sortedStats.length - 1];
       const lastDate = new Date(lastStat.date);
       const todayDate = new Date(today);
-      const daysDiff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor(
+        (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
       if (daysDiff === 1) {
         // Yesterday had activity, find the streak
@@ -94,17 +96,15 @@ export const DailyHUD: React.FC<DailyHUDProps> = ({ date }) => {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
         <span style={{ fontSize: '0.9em', color: 'var(--text-secondary)' }}>Earned:</span>
         <span style={{ fontSize: '1.2em' }}>{stats?.E || 0}</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginLeft: 'auto' }}>
-              <span style={{ fontSize: '0.9em', color: 'var(--text-secondary)' }}>Streak:</span>
-              <span style={{ fontSize: '1.5em', fontWeight: 'bold', color: 'var(--accent-color)' }}>
-                {streakData.currentStreak}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span style={{ fontSize: '0.9em', color: 'var(--text-secondary)' }}>Max:</span>
-              <span style={{ fontSize: '1.2em' }}>{streakData.maxStreak}</span>
-            </div>
       </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+        <span style={{ color: 'var(--text-secondary)' }}>Streak:</span>
+        <span style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>
+          {streakData.currentStreak}
+        </span>
+        <span style={{ color: 'var(--text-secondary)' }}>(Max: {streakData.maxStreak})</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}></div>
     </div>
   );
 };
