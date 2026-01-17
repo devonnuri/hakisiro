@@ -1,73 +1,130 @@
-# React + TypeScript + Vite
+# Hakisiro
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive task management and daily planning application built with React, TypeScript, and Vite. Track tasks, manage daily activities, visualize progress through analytics, and maintain a structured task hierarchy with prerequisites and dependencies. Hakisiro means "I don't want to do it"(하기 싫어) in Korean, reflecting the app's mission to help users overcome procrastination and manage their tasks effectively.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Daily Task Management**: Plan and track tasks for each day with a dedicated daily HUD and task list
+- **Task Pool**: Manage a centralized pool of tasks with a tree-based hierarchy
+- **Prerequisites & Dependencies**: Define task dependencies and track prerequisite completion
+- **Analytics**: Visualize patterns and progress through analytics views
+- **Calendar View**: Navigate tasks across dates with an intuitive calendar interface
+- **Daily Memo**: Record notes and reflections for each day
+- **Persistent Storage**: All data stored locally using Dexie (IndexedDB wrapper)
+- **Import/Export**: Backup and restore your data
+- **Responsive Design**: Works seamlessly on desktop and tablet devices
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19 with TypeScript
+- **Build Tool**: Vite
+- **Database**: Dexie (IndexedDB)
+- **Routing**: React Router v7
+- **Date Handling**: date-fns
+- **Styling**: CSS with custom UI components
+- **Code Quality**: ESLint + TypeScript strict mode
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 16+
+- npm or yarn
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Clone the repository
+git clone <repository-url>
+cd hakisiro
+
+# Install dependencies
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Start the development server
+npm run dev
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# The app will be available at http://localhost:5173
 ```
+
+### Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview the production build
+npm run preview
+```
+
+### Linting
+
+```bash
+# Run ESLint checks
+npm run lint
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── analytics/       # Analytics and pattern detection views
+│   ├── common/          # Shared components (progress, settings)
+│   ├── layout/          # Layout wrapper
+│   ├── pool/            # Task pool and tree viewer
+│   ├── today/           # Daily management components
+│   └── ui/              # Reusable UI components (button, input, panel)
+├── pages/              # Page components for routes
+├── services/           # Business logic services
+│   ├── TaskService
+│   ├── LedgerService
+│   ├── NodeService
+│   └── ImportExportService
+├── db/                 # Database schema and initialization
+├── hooks/              # Custom React hooks
+├── types/              # TypeScript type definitions
+├── styles/             # Global and component styles
+└── main.tsx           # Application entry point
+```
+
+## Pages & Routes
+
+- `/today` - Today's task view with daily HUD and memo
+- `/day/:date` - View tasks for a specific date
+- `/pool` - Task pool with tree hierarchy
+- `/calendar` - Calendar navigation view
+- `/analytics` - Analytics and pattern detection
+
+## Database Schema
+
+The app uses Dexie with IndexedDB, storing:
+
+- **Nodes**: Tree-based task hierarchy with parent/child relationships
+- **Tasks**: Individual task items with completion status
+- **TaskPrereqs**: Task prerequisites and dependencies
+- **TodayItems**: Daily task selections
+- **LogEntries**: Task completion history
+- **DailyStats**: Daily statistics and metrics
+- **DailyMemos**: Daily notes and reflections
+- **Meta**: Application metadata
+
+## Configuration
+
+Key configuration files:
+
+- `vite.config.ts` - Vite build configuration
+- `tsconfig.json` - TypeScript configuration
+- `eslint.config.js` - ESLint rules
+- `package.json` - Dependencies and scripts
+
+## Contributing
+
+1. Follow TypeScript strict mode guidelines
+2. Use ESLint for code quality
+3. Keep components focused and modular
+4. Add types for all function parameters and returns
