@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../db';
-import { Panel } from '../components/ui/Panel';
 import { Button } from '../components/ui/Button';
 import {
   startOfMonth,
