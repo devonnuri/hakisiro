@@ -13,14 +13,17 @@ export const PatternDetection: React.FC = () => {
   const weekdayPatterns = useMemo(() => {
     if (!stats || stats.length === 0) return null;
 
-    const patterns: Record<string, { count: number; totalA: number; totalE: number; avgA: number; avgE: number }> = {
-      'Sunday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
-      'Monday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
-      'Tuesday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
-      'Wednesday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
-      'Thursday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
-      'Friday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
-      'Saturday': { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 }
+    const patterns: Record<
+      string,
+      { count: number; totalA: number; totalE: number; avgA: number; avgE: number }
+    > = {
+      Sunday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
+      Monday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
+      Tuesday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
+      Wednesday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
+      Thursday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
+      Friday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 },
+      Saturday: { count: 0, totalA: 0, totalE: 0, avgA: 0, avgE: 0 }
     };
 
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -48,7 +51,10 @@ export const PatternDetection: React.FC = () => {
   const monthlyTrends = useMemo(() => {
     if (!stats || stats.length === 0) return null;
 
-    const trends: Record<string, { count: number; totalA: number; totalE: number; avgA: number; avgE: number }> = {};
+    const trends: Record<
+      string,
+      { count: number; totalA: number; totalE: number; avgA: number; avgE: number }
+    > = {};
 
     for (const stat of stats) {
       const date = new Date(stat.date);
@@ -91,49 +97,88 @@ export const PatternDetection: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
       {/* Weekday Pattern */}
       <Panel title="Weekday Pattern">
-        <div style={{ padding: '16px' }}>
+        <div style={{ border: '1px solid var(--border-color)', padding: 0 }}>
           {weekdayPatterns ? (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '8px'
-              }}
-            >
-              {(() => {
-                const maxAvg = Math.max(
-                  1,
-                  ...Object.values(weekdayPatterns).map((p) => p.avgA)
-                );
-                return Object.entries(weekdayPatterns).map(([day, pattern]) => {
-                  const intensity = Math.max(0, Math.min(1, pattern.avgA / maxAvg));
-                  const alpha = 0.12 + intensity * 0.68; // 0.12..0.8
-                  const heatColor = `rgba(76, 175, 80, ${alpha.toFixed(3)})`; // #4caf50 with alpha
-                  return (
-                    <div
-                      key={day}
-                      style={{
-                        textAlign: 'center',
-                        padding: '8px',
-                        background: heatColor,
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '4px'
-                      }}
-                      title={`${day}: avg ${pattern.avgA.toFixed(1)} (n=${pattern.count})`}
-                    >
-                      <div style={{ fontSize: '0.8em', color: '#fff' }}>{day.slice(0, 3)}</div>
-                      <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#fff' }}>
-                        {pattern.avgA.toFixed(1)}
+            <>
+              {/* Header Row */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  borderBottom: '1px solid var(--border-color)',
+                  background: 'var(--highlight-color)'
+                }}
+              >
+                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((dag) => (
+                  <div
+                    key={dag}
+                    style={{
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '0.9em'
+                    }}
+                  >
+                    {dag}
+                  </div>
+                ))}
+              </div>
+
+              {/* Data Row */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  background: 'var(--border-color)',
+                  gap: '1px'
+                }}
+              >
+                {(() => {
+                  const dayKeys = [
+                    'Sunday',
+                    'Monday',
+                    'Tuesday',
+                    'Wednesday',
+                    'Thursday',
+                    'Friday',
+                    'Saturday'
+                  ];
+                  const maxAvg = Math.max(1, ...Object.values(weekdayPatterns).map((p) => p.avgA));
+
+                  return dayKeys.map((day) => {
+                    const pattern = weekdayPatterns[day];
+                    const intensity = Math.max(0, Math.min(1, pattern.avgA / maxAvg));
+                    const alpha = 0.1 + intensity * 0.7;
+                    const background = `rgba(86, 156, 214, ${alpha})`; // Match calendar accent
+                    const color = intensity > 0.5 ? '#fff' : 'var(--text-primary)';
+
+                    return (
+                      <div
+                        key={day}
+                        style={{
+                          textAlign: 'center',
+                          padding: '12px 4px',
+                          background: background,
+                          color: color,
+                          minHeight: '80px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center'
+                        }}
+                        title={`${day}: avg ${pattern.avgA.toFixed(1)} (n=${pattern.count})`}
+                      >
+                        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
+                          {pattern.avgA.toFixed(1)}
+                        </div>
+                        <div style={{ fontSize: '0.75em', opacity: 0.8 }}>n={pattern.count}</div>
                       </div>
-                      <div style={{ fontSize: '0.75em', color: '#e5e5e5' }}>n={pattern.count}</div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
+                    );
+                  });
+                })()}
+              </div>
+            </>
           ) : null}
         </div>
       </Panel>
@@ -148,8 +193,14 @@ export const PatternDetection: React.FC = () => {
                 const percentage = (trend.avgA / Math.max(maxAvg, 1)) * 100;
                 return (
                   <div key={month}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '0.9em' }}>{month}</span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '4px'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.9em', fontFamily: 'monospace' }}>[{month}]</span>
                       <span style={{ fontSize: '0.9em', color: 'var(--accent-color)' }}>
                         {trend.avgA.toFixed(1)}&copy;/day
                       </span>
@@ -158,7 +209,7 @@ export const PatternDetection: React.FC = () => {
                       style={{
                         width: '100%',
                         height: '16px',
-                        background: '#222',
+                        background: 'var(--highlight-color)',
                         border: '1px solid var(--border-color)',
                         position: 'relative'
                       }}
@@ -168,7 +219,7 @@ export const PatternDetection: React.FC = () => {
                           width: `${percentage}%`,
                           height: '100%',
                           background: 'var(--accent-color)',
-                          transition: 'width 0.3s'
+                          transition: 'width 0s' // Instant TUI
                         }}
                       />
                     </div>
@@ -191,33 +242,45 @@ export const PatternDetection: React.FC = () => {
                   const percentage = (d.A / Math.max(maxActivity, 1)) * 100;
                   return (
                     <div key={d.date}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: '4px'
+                        }}
+                      >
                         <button
                           onClick={() => navigate(`/day/${d.date}`)}
                           style={{
                             fontSize: '0.9em',
                             background: 'none',
                             border: 'none',
-                            color: 'var(--accent-color)',
+                            color: 'var(--text-primary)',
                             cursor: 'pointer',
-                            textDecoration: 'underline',
-                            padding: 0
+                            padding: 0,
+                            fontFamily: 'monospace',
+                            textDecoration: 'underline'
                           }}
                         >
                           {d.date}
                         </button>
-                        <span style={{ fontSize: '0.9em', color: 'var(--accent-color)', fontWeight: 'bold' }}>
+                        <span
+                          style={{
+                            fontSize: '0.9em',
+                            color: 'var(--accent-color)',
+                            fontWeight: 'bold'
+                          }}
+                        >
                           {d.A.toFixed(1)}&copy;
                         </span>
                       </div>
                       <div
                         style={{
                           width: '100%',
-                          height: '20px',
-                          background: '#222',
+                          height: '16px',
+                          background: 'var(--highlight-color)',
                           border: '1px solid var(--border-color)',
-                          position: 'relative',
-                          borderRadius: '2px'
+                          position: 'relative'
                         }}
                       >
                         <div
@@ -225,8 +288,7 @@ export const PatternDetection: React.FC = () => {
                             width: `${percentage}%`,
                             height: '100%',
                             background: 'var(--accent-color)',
-                            transition: 'width 0.3s',
-                            borderRadius: '1px'
+                            transition: 'width 0s'
                           }}
                         />
                       </div>

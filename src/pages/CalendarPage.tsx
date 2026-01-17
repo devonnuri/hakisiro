@@ -1,14 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../db/index'; // Trying ../db/index if interpreted from src/pages
-// But wait, if file is in src/pages/CalendarPage.tsx, it needs ../../db/index
-// If file is in src/pages/CalendarPage.tsx (flat), it needs ../../db/index
-// If file is in src/pages/CalendarPage.tsx, then .. is src/pages, ../.. is src. So ../../db is correct.
-// Let's assume standard behavior. I will try to use the absolute path alias if configured, or just relative.
-// "cannot find module".
-// Let's try to list src/pages too to ensure where I am.
-
+import { db } from '../db';
 import { Panel } from '../components/ui/Panel';
 import { Button } from '../components/ui/Button';
 import {
@@ -30,7 +23,6 @@ export const CalendarPage: React.FC = () => {
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   // Fetch stats for the whole month
-  // Range query on dailyStats
   const stats = useLiveQuery(() => {
     const startStr = format(monthStart, 'yyyy-MM-dd');
     const endStr = format(monthEnd, 'yyyy-MM-dd');
@@ -65,39 +57,49 @@ export const CalendarPage: React.FC = () => {
           marginBottom: 16
         }}
       >
-        <Button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>&lt; Prev</Button>
-        <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
-          {format(currentMonth, 'MMMM yyyy')}
+        <Button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>[ &lt; PREV ]</Button>
+        <div style={{ fontSize: '1.2em', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          [ {format(currentMonth, 'MMMM yyyy')} ]
         </div>
-        <Button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>Next &gt;</Button>
+        <Button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>[ NEXT &gt; ]</Button>
       </div>
 
-      <Panel title="Calendar">
+      <div className="panel" style={{ border: '1px solid var(--border-color)', padding: 0 }}>
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
-            gap: 1,
-            background: 'var(--border-color)',
-            padding: 1
+            borderBottom: '1px solid var(--border-color)',
+            background: 'var(--highlight-color)'
           }}
         >
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+          {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
             <div
               key={d}
               style={{
-                background: 'var(--panel-bg)',
-                padding: 8,
+                padding: '8px 4px',
                 textAlign: 'center',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '0.9em'
               }}
             >
               {d}
             </div>
           ))}
+        </div>
 
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            background: 'var(--border-color)',
+            gridGap: '1px',
+            border: '1px solid var(--border-color)',
+            borderTop: 'none'
+          }}
+        >
           {Array.from({ length: monthStart.getDay() }).map((_, i) => (
-            <div key={`pad-${i}`} style={{ background: 'var(--panel-bg)' }} />
+            <div key={`pad-${i}`} style={{ background: 'var(--bg-color)', minHeight: 80 }} />
           ))}
 
           {days.map((day) => {
@@ -106,16 +108,16 @@ export const CalendarPage: React.FC = () => {
             const isTodayDate = isToday(day);
 
             // Heatmap logic
-            // Use simple green scale. Intensity 0.0 - 1.0
-            // activity / maxA
-            let background = 'var(--panel-bg)';
+            let background = 'var(--bg-color)';
+            let color = 'var(--text-primary)';
             if (stat && stat.A > 0 && maxA > 0) {
               const intensity = Math.min(1, stat.A / maxA);
-              // Dark green base (e.g. 0,50,0) to Bright green (0,255,0)?
-              // Or use opacity overlay.
-              // Let's use rgba(0, 255, 0, alpha). 
-              // alpha = 0.1 + 0.4 * intensity?
-              background = `rgba(0, 255, 0, ${0.1 + intensity * 0.4})`;
+              // Calculate green intensity manually or use opacity
+              // Using opacity on a green layer
+              const alpha = 0.1 + intensity * 0.7;
+              // Need a solid color for TUI feel ideally, or just use RGBA
+              background = `rgba(86, 156, 214, ${alpha})`; // Blueish accent
+              if (intensity > 0.5) color = '#fff';
             }
 
             return (
@@ -123,31 +125,32 @@ export const CalendarPage: React.FC = () => {
                 key={dateStr}
                 style={{
                   background: background,
-                  padding: '8px',
+                  color: color,
+                  padding: '4px 8px',
                   minHeight: '80px',
                   cursor: 'pointer',
-                  border: isTodayDate ? '2px solid var(--accent-color)' : 'none',
                   position: 'relative',
-                  color: stat && stat.A > 0 ? '#fff' : 'inherit' // Ensure text is readable
+                  outline: isTodayDate ? '2px solid var(--accent-color)' : 'none',
+                  outlineOffset: '-2px'
                 }}
                 onClick={() => navigate(`/day/${dateStr}`)}
               >
                 <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: 4 }}>
                   {format(day, 'd')}
                 </div>
-                {stat && (
+                {stat && stat.A > 0 && (
                   <div
-                    style={{ fontSize: '0.8em', display: 'flex', flexDirection: 'column', gap: 2 }}
+                    style={{ fontSize: '0.75em', display: 'flex', flexDirection: 'column', gap: 2 }}
                   >
-                    <div>A: {stat.A.toFixed(1)}</div>
-                    <div style={{ opacity: 0.8 }}>E: {stat.E}</div>
+                    <div>ACT: {stat.A.toFixed(1)}</div>
+                    <div style={{ opacity: 0.8 }}>ERN: {stat.E}</div>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-      </Panel>
+      </div>
     </div>
   );
 };

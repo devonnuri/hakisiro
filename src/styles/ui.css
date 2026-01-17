@@ -1,63 +1,141 @@
-/* Retro UI Components */
+/* TUI Component Styles */
 
+/* PANEL */
 .panel {
   border: 1px solid var(--border-color);
   background: var(--panel-bg);
   display: flex;
   flex-direction: column;
   margin-bottom: var(--spacing-md);
+  position: relative;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
 }
 
 .panel-header {
-  background: var(--highlight-color);
-  color: var(--text-primary);
-  padding: 4px 8px;
+  background: var(--text-primary);
+  color: var(--bg-color);
+  padding: 2px 8px;
   font-weight: bold;
-  text-transform: lowercase;
+  text-transform: uppercase;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  letter-spacing: 1px;
 }
 
 .panel-content {
-  padding: 6px;
+  padding: var(--spacing-sm);
   flex: 1;
   overflow: auto;
 }
 
+/* BUTTON */
 .retro-btn {
   background: transparent;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--text-primary);
   color: var(--text-primary);
-  padding: 4px 12px;
+  padding: 2px 10px;
   cursor: pointer;
-  text-transform: lowercase;
-  font-size: 0.9em;
-  transition: all 0.1s;
+  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: bold;
+  transition: all 0s;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
 }
 
 .retro-btn:hover {
-  background: var(--highlight-color);
-  color: var(--accent-color);
-  border-color: var(--accent-color);
+  background: var(--text-primary);
+  color: var(--bg-color);
 }
 
 .retro-btn:active {
-  transform: translateY(1px);
+  transform: translate(1px, 1px);
+}
+
+.retro-btn:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.retro-btn.primary {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.retro-btn.primary:hover {
+  background: var(--accent-color);
+  color: var(--bg-color);
+}
+
+/* INPUT */
+.input-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.input-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
 }
 
 .retro-input {
-  background: transparent;
-  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  border: 1px solid var(--text-muted);
   color: var(--text-primary);
-  padding: 4px 8px;
+  padding: 6px 8px;
   width: 100%;
+  font-family: var(--font-main);
+  transition: border-color 0s;
 }
 
 .retro-input:focus {
-  outline: none;
   border-color: var(--accent-color);
+  outline: none;
+  background: var(--highlight-color);
+}
+
+.retro-input::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* CHECKBOX */
+input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--text-primary);
+  background: var(--bg-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  vertical-align: middle;
+  position: relative;
+  margin-right: 8px;
+}
+
+input[type='checkbox']:checked::after {
+  content: 'x';
+  color: var(--accent-color);
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1;
+  position: absolute;
+  top: -2px;
+}
+
+input[type='checkbox']:focus {
+  outline: 1px dashed var(--text-secondary);
+  outline-offset: 2px;
 }
 
 /* Utils */

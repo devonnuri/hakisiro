@@ -49,13 +49,19 @@ const NodeItem: React.FC<NodeItemProps> = ({
         }}
       >
         <div
-          style={{ width: 16, textAlign: 'center', marginRight: 4, cursor: 'pointer' }}
+          style={{
+            width: 20,
+            textAlign: 'center',
+            marginRight: 4,
+            cursor: 'pointer',
+            fontFamily: 'monospace'
+          }}
           onClick={(e) => {
             e.stopPropagation();
             toggleExpand(node.id);
           }}
         >
-          {hasChildren ? (isExpanded ? '∨' : '∧') : '·'}
+          {hasChildren ? (isExpanded ? '[-]' : '[+]') : ' . '}
         </div>
         <div style={{ fontWeight: 'bold' }}>{node.code}</div>
         <div style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>{node.name}</div>
@@ -338,7 +344,8 @@ export const AnalyticsTree: React.FC = () => {
                 onClick={() => setMode('accumulated')}
                 style={{
                   fontWeight: mode === 'accumulated' ? 'bold' : 'normal',
-                  borderColor: mode === 'accumulated' ? 'var(--accent-color)' : 'var(--border-color)'
+                  borderColor:
+                    mode === 'accumulated' ? 'var(--accent-color)' : 'var(--border-color)'
                 }}
               >
                 Accumulated
@@ -372,100 +379,118 @@ export const AnalyticsTree: React.FC = () => {
                 style={{ background: '#050505', border: '1px solid #333' }}
               >
                 {/* Axes */}
-                <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#666" />
+                <line
+                  x1={padding}
+                  y1={height - padding}
+                  x2={width - padding}
+                  y2={height - padding}
+                  stroke="#666"
+                />
                 <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#666" />
 
-                {mode === 'normal' ? (
-                  // Bars
-                  displaySeries.map((d, i) => {
-                    const val = d[metric] || 0;
-                    const h = (val / maxVal) * chartH;
-                    const x = padding + i * (chartW / displaySeries.length) + (chartW / displaySeries.length - barW) / 2;
-                    const y = height - padding - h;
-                    const isForecast = estimateEnabled && i >= currentSeries.length;
-                    return (
-                      <g key={d.date}>
-                        <rect
-                          x={x}
-                          y={y}
-                          width={barW}
-                          height={h}
-                          fill={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
-                          opacity={isForecast ? 0.4 : 0.8}
-                        >
-                          <title>{`${d.date}: ${val}`}</title>
-                        </rect>
-                      </g>
-                    );
-                  })
-                ) : (
-                  // Accumulated line
-                  (() => {
-                    const maxAccum = Math.max(...displaySeries.map((d) => d[metric] || 0), 10);
-                    const hist = displaySeries.slice(0, currentSeries.length);
-                    const forecast = displaySeries.slice(currentSeries.length - 1); // include last point for continuity
-                    const histPoints = hist
-                      .map((d, i) => {
-                        const val = d[metric] || 0;
-                        const x = padding + (i / Math.max(1, displaySeries.length - 1)) * chartW;
-                        const y = height - padding - (val / maxAccum) * chartH;
-                        return `${x},${y}`;
-                      })
-                      .join(' ');
-                    const forecastPoints = forecast
-                      .map((d, i) => {
-                        const val = d[metric] || 0;
-                        const x = padding + ((i + (currentSeries.length - 1)) / Math.max(1, displaySeries.length - 1)) * chartW;
-                        const y = height - padding - (val / maxAccum) * chartH;
-                        return `${x},${y}`;
-                      })
-                      .join(' ');
-                    return (
-                      <>
-                        <polyline
-                          points={histPoints}
-                          fill="none"
-                          stroke={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
-                          strokeWidth="2"
-                        />
-                        {estimateEnabled && forecastDays > 0 && (
-                          <polyline
-                            points={forecastPoints}
-                            fill="none"
-                            stroke={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
-                            strokeWidth="2"
-                            strokeDasharray="4 4"
-                            opacity={0.7}
-                          />
-                        )}
-                        {displaySeries.map((d, i) => {
+                {mode === 'normal'
+                  ? // Bars
+                    displaySeries.map((d, i) => {
+                      const val = d[metric] || 0;
+                      const h = (val / maxVal) * chartH;
+                      const x =
+                        padding +
+                        i * (chartW / displaySeries.length) +
+                        (chartW / displaySeries.length - barW) / 2;
+                      const y = height - padding - h;
+                      const isForecast = estimateEnabled && i >= currentSeries.length;
+                      return (
+                        <g key={d.date}>
+                          <rect
+                            x={x}
+                            y={y}
+                            width={barW}
+                            height={h}
+                            fill={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
+                            opacity={isForecast ? 0.4 : 0.8}
+                          >
+                            <title>{`${d.date}: ${val}`}</title>
+                          </rect>
+                        </g>
+                      );
+                    })
+                  : // Accumulated line
+                    (() => {
+                      const maxAccum = Math.max(...displaySeries.map((d) => d[metric] || 0), 10);
+                      const hist = displaySeries.slice(0, currentSeries.length);
+                      const forecast = displaySeries.slice(currentSeries.length - 1); // include last point for continuity
+                      const histPoints = hist
+                        .map((d, i) => {
                           const val = d[metric] || 0;
                           const x = padding + (i / Math.max(1, displaySeries.length - 1)) * chartW;
                           const y = height - padding - (val / maxAccum) * chartH;
-                          const isForecast = estimateEnabled && i >= currentSeries.length - 1;
-                          return (
-                            <circle
-                              key={d.date}
-                              cx={x}
-                              cy={y}
-                              r="3"
-                              fill={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
-                              opacity={isForecast ? 0.5 : 1}
-                            >
-                              <title>{`${d.date}: ${val.toFixed(1)}`}</title>
-                            </circle>
-                          );
-                        })}
-                      </>
-                    );
-                  })()
-                )}
+                          return `${x},${y}`;
+                        })
+                        .join(' ');
+                      const forecastPoints = forecast
+                        .map((d, i) => {
+                          const val = d[metric] || 0;
+                          const x =
+                            padding +
+                            ((i + (currentSeries.length - 1)) /
+                              Math.max(1, displaySeries.length - 1)) *
+                              chartW;
+                          const y = height - padding - (val / maxAccum) * chartH;
+                          return `${x},${y}`;
+                        })
+                        .join(' ');
+                      return (
+                        <>
+                          <polyline
+                            points={histPoints}
+                            fill="none"
+                            stroke={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
+                            strokeWidth="2"
+                          />
+                          {estimateEnabled && forecastDays > 0 && (
+                            <polyline
+                              points={forecastPoints}
+                              fill="none"
+                              stroke={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
+                              strokeWidth="2"
+                              strokeDasharray="4 4"
+                              opacity={0.7}
+                            />
+                          )}
+                          {displaySeries.map((d, i) => {
+                            const val = d[metric] || 0;
+                            const x =
+                              padding + (i / Math.max(1, displaySeries.length - 1)) * chartW;
+                            const y = height - padding - (val / maxAccum) * chartH;
+                            const isForecast = estimateEnabled && i >= currentSeries.length - 1;
+                            return (
+                              <circle
+                                key={d.date}
+                                cx={x}
+                                cy={y}
+                                r="3"
+                                fill={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
+                                opacity={isForecast ? 0.5 : 1}
+                              >
+                                <title>{`${d.date}: ${val.toFixed(1)}`}</title>
+                              </circle>
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
 
                 {/* Labels */}
                 <text x={padding} y={height - 10} fill="#666" fontSize="10">
                   {displaySeries[0].date}
                 </text>
-                <text x={width - padding} y={height - 10} fill="#666" fontSize="10" textAnchor="end">
+                <text
+                  x={width - padding}
+                  y={height - 10}
+                  fill="#666"
+                  fontSize="10"
+                  textAnchor="end"
+                >
                   {displaySeries[displaySeries.length - 1].date}
                 </text>
                 <text x={padding - 5} y={padding} fill="#666" fontSize="10" textAnchor="end">

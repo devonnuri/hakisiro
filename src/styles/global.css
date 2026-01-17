@@ -2,21 +2,39 @@
 @import './ui.css';
 
 :root {
-  --bg-color: #000000;
-  --panel-bg: #000000;
-  --text-primary: #ffffff;
-  --text-secondary: #cccccc;
-  --accent-color: #4caf50;
-  /* Retro Green */
-  --highlight-color: #1a1a1a;
+  /* TUI Palette */
+  --bg-color: #0c0c0c;
+  --panel-bg: #141414;
+  --text-primary: #e0e0e0;
+  --text-secondary: #808080;
+  --text-muted: #505050;
+  
+  --accent-color: #3b8eea; 
+  --accent-hover: #2a6cb0;
+  
+  --success-color: #50fa7b;
+  --warning-color: #ffb86c;
+  --error-color: #ff5555;
+
+  --highlight-color: #252525;
+  --selection-bg: #3b8eea;
+  --selection-text: #ffffff;
+  
   --border-color: #333333;
+  --border-active: #555555;
 
-  --font-main: 'JetBrains Mono', monospace;
+  /* Font */
+  --font-main: 'JetBrains Mono', 'Courier New', Courier, monospace;
 
+  /* Spacing */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
+  
+  /* TUI Specifics */
+  --radius-sm: 0px; /* TUI has no rounded corners */
+  --radius-md: 0px;
 }
 
 * {
@@ -31,29 +49,51 @@ body {
   font-family: var(--font-main);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+  line-height: 1.4;
+  font-size: 14px;
+  overflow: hidden; /* App feel */
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 button,
 input,
 textarea,
 select {
-  font-family: inherit;
+  font-family: var(--font-main);
+  font-size: 14px;
+  outline: none;
 }
 
-/* Scrollbar styling for desktop */
+/* Custom Scrollbar to match TUI */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--bg-color);
+  border-left: 1px solid var(--border-color);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--highlight-color);
+  border: 1px solid var(--border-color);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--bg-color);
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-text);
 }

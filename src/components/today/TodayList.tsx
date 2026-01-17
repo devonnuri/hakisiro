@@ -41,7 +41,8 @@ const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemo
             <ProgressControl value={task.progress} onChange={onProgressChange} />
           </div>
           <div style={{ fontSize: '0.8em', fontWeight: 'normal' }}>
-            ({(log?.weight || 0) > 0 ? '+' : ''}{((log?.weight || 0) / 10).toFixed(1)})
+            ({(log?.weight || 0) > 0 ? '+' : ''}
+            {((log?.weight || 0) / 10).toFixed(1)})
           </div>
         </div>
 
@@ -75,11 +76,11 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
 
   // Fetch generic tasks + node codes
   // Optim: Fetch all tasks & nodes? Or search?
-  // Let's fetch all tasks for filtering. 
+  // Let's fetch all tasks for filtering.
   const data = useLiveQuery(async () => {
     const tasks = await db.tasks.toArray();
     const nodes = await db.nodes.toArray();
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
     return { tasks, nodeMap };
   }, []);
@@ -88,9 +89,9 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
     if (!data || !search.trim()) return [];
     const term = search.toLowerCase();
     return data.tasks
-      .filter(t => t.title.toLowerCase().includes(term))
+      .filter((t) => t.title.toLowerCase().includes(term))
       .slice(0, 5) // Limit results
-      .map(t => ({
+      .map((t) => ({
         ...t,
         nodeCode: data.nodeMap.get(t.nodeId)?.code || '?'
       }));
@@ -122,13 +123,13 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
           style={{ flex: 1 }}
           placeholder="Search task..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <Button onClick={onCancel}>Cancel</Button>
       </div>
       {matches.length > 0 && (
         <div style={{ marginTop: 8, borderTop: '1px solid var(--border-color)' }}>
-          {matches.map(t => (
+          {matches.map((t) => (
             <div
               key={t.id}
               style={{
@@ -142,7 +143,9 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
               className="hover-bg"
             >
               <span>{t.title}</span>
-              <span className="text-dim" style={{ fontSize: '0.8em' }}>{t.nodeCode}</span>
+              <span className="text-dim" style={{ fontSize: '0.8em' }}>
+                {t.nodeCode}
+              </span>
             </div>
           ))}
         </div>

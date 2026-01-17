@@ -19,76 +19,68 @@ export const Layout: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        maxWidth: '800px',
-        margin: '0 auto',
-        borderLeft: '1px solid var(--border-color)',
-        borderRight: '1px solid var(--border-color)'
+        width: '100%',
+        margin: '0 auto'
       }}
     >
-      <nav
+      <header
         style={{
           display: 'flex',
           borderBottom: '1px solid var(--border-color)',
-          background: 'var(--bg-color)',
-          alignItems: 'center'
+          background: 'var(--panel-bg)',
+          alignItems: 'center',
+          padding: '0 8px'
         }}
       >
-        <NavLink
-          to="/today"
-          className={({ isActive }) => clsx('nav-link', isActive && 'active')}
-          style={{
-            padding: '8px 16px',
-            textDecoration: 'none',
-            color: 'var(--text-secondary)',
-            fontWeight: 'bold'
-          }}
-        >
-          today
+        <div style={{ fontWeight: 'bold', marginRight: 16 }}>HAKISIRO</div>
+        <NavLink to="/today" className={({ isActive }) => clsx('nav-link', isActive && 'active')}>
+          [ TODAY ]
         </NavLink>
-        <NavLink
-          to="/pool"
-          className={({ isActive }) => clsx('nav-link', isActive && 'active')}
-          style={{
-            padding: '8px 16px',
-            textDecoration: 'none',
-            color: 'var(--text-secondary)',
-            fontWeight: 'bold'
-          }}
-        >
-          pool
+        <NavLink to="/pool" className={({ isActive }) => clsx('nav-link', isActive && 'active')}>
+          [ POOL ]
         </NavLink>
         <NavLink
           to="/analytics"
           className={({ isActive }) => clsx('nav-link', isActive && 'active')}
-          style={{
-            padding: '8px 16px',
-            textDecoration: 'none',
-            color: 'var(--text-secondary)',
-            fontWeight: 'bold'
-          }}
         >
-          analytics
+          [ ANALYTICS ]
         </NavLink>
         <div style={{ flex: 1 }} />
-        <Button onClick={() => setShowSettings(true)} style={{ margin: '0 8px', border: 'none' }}>
-          settings
+        <Button onClick={() => setShowSettings(true)} style={{ border: 'none' }}>
+          SETTINGS
         </Button>
-      </nav>
+      </header>
 
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <main
+        style={{
+          flex: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 'var(--spacing-md)'
+        }}
+      >
         <Outlet />
       </main>
 
       {showSettings && <SettingsOverlay onClose={() => setShowSettings(false)} />}
 
-      {/* Global CSS for active nav link */}
       <style>{`
+        .nav-link {
+          padding: 8px 12px;
+          text-decoration: none;
+          color: var(--text-secondary);
+          font-weight: bold;
+          font-family: var(--font-main);
+          transition: all 0s;
+        }
         .nav-link.active {
-          color: var(--accent-color) !important;
-          background: var(--highlight-color);
+          color: var(--bg-color) !important;
+          background: var(--text-primary);
         }
         .nav-link:hover {
-          color: var(--text-primary) !important;
+          color: var(--text-primary);
+          text-decoration: underline;
         }
       `}</style>
     </div>
