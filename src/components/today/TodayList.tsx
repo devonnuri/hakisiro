@@ -85,17 +85,47 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
     return { tasks, nodeMap };
   }, []);
 
+  // Fetch today's items to exclude already added tasks
+  const todayItems = useLiveQuery(() => db.todayItems.where('date').equals(date).toArray(), [date]);
+
   const matches = React.useMemo(() => {
-    if (!data || !search.trim()) return [];
-    const term = search.toLowerCase();
-    return data.tasks
-      .filter((t) => t.title.toLowerCase().includes(term))
-      .slice(0, 5) // Limit results
-      .map((t) => ({
+    if (!data || !todayItems) return [];
+
+    const todayTaskIds = new Set(todayItems.map((i) => i.taskId));
+    const availableTasks = data.tasks.filter((t) => !todayTaskIds.has(t.id));
+
+    if (search.trim()) {
+      // Search mode: filter by title
+      const term = search.toLowerCase();
+      return availableTasks
+        .filter((t) => t.title.toLowerCase().includes(term))
+        .slice(0, 5) // Limit results
+        .map((t) => ({
+          ...t,
+          nodeCode: data.nodeMap.get(t.nodeId)?.code || '?'
+        }));
+    } else {
+      // No search: show candidates
+      // (1) In-progress tasks (0 < progress < 10)
+      const inProgressTasks = availableTasks.filter((t) => t.progress > 0 && t.progress < 10);
+
+      // (2) Tasks of in-progress nodes (nodes that have tasks with 0 < progress < 10)
+      const inProgressNodeIds = new Set(
+        availableTasks.filter((t) => t.progress > 0 && t.progress < 10).map((t) => t.nodeId)
+      );
+
+      const tasksOfInProgressNodes = availableTasks.filter(
+        (t) => !inProgressTasks.find((ipt) => ipt.id === t.id) && inProgressNodeIds.has(t.nodeId)
+      );
+
+      const candidates = [...inProgressTasks, ...tasksOfInProgressNodes].slice(0, 5);
+
+      return candidates.map((t) => ({
         ...t,
         nodeCode: data.nodeMap.get(t.nodeId)?.code || '?'
       }));
-  }, [data, search]);
+    }
+  }, [data, search, todayItems]);
 
   const handleSelect = async (task: Task) => {
     // Add to Today
@@ -129,6 +159,11 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
       </div>
       {matches.length > 0 && (
         <div style={{ marginTop: 8, borderTop: '1px solid var(--border-color)' }}>
+          {!search.trim() && (
+            <div style={{ padding: '4px 4px', fontSize: '0.8em', color: 'var(--text-secondary)' }}>
+              Suggestions
+            </div>
+          )}
           {matches.map((t) => (
             <div
               key={t.id}
