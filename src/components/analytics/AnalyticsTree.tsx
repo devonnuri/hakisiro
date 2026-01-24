@@ -203,6 +203,27 @@ export const AnalyticsTree: React.FC = () => {
     return { outE, outA };
   }, [tasks, subtreeNodeIds]);
 
+  // Progress bar data: completed, in-progress, pending
+  const progressBreakdown = useMemo(() => {
+    const tlist = (tasks || []).filter((t) => subtreeNodeIds.includes(t.nodeId));
+    let completed = 0; // progress = 10
+    let inProgress = 0; // 0 < progress < 10
+    let pending = 0; // progress = 0
+    for (const t of tlist) {
+      const progress = t.progress || 0; // 0..10
+      const activity = t.credit; // Using credit as activity metric
+      if (progress === 10) {
+        completed += activity;
+      } else if (progress > 0) {
+        inProgress += activity;
+      } else {
+        pending += activity;
+      }
+    }
+    const total = completed + inProgress + pending;
+    return { completed, inProgress, pending, total };
+  }, [tasks, subtreeNodeIds]);
+
   // Average daily rates from last window
   const windowDays = 14;
   const avgRates = useMemo(() => {
@@ -307,6 +328,61 @@ export const AnalyticsTree: React.FC = () => {
       <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300 }}>
         <Panel title={selectedId === 'ROOT' ? 'Overall History' : 'Node History'}>
           <div style={{ padding: 8 }}>
+            {/* Progress Bar */}
+            {progressBreakdown.total > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{ fontSize: '0.85em', marginBottom: 4, color: 'var(--text-secondary)' }}
+                >
+                  Task Credits: {progressBreakdown.completed.toFixed(1)} /&nbsp;
+                  {progressBreakdown.total.toFixed(1)}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    height: 24,
+                    background: 'var(--bg-color)',
+                    border: '1px solid var(--border-color)',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Completed segment (brightest accent) */}
+                  {progressBreakdown.completed > 0 && (
+                    <div
+                      style={{
+                        flex: progressBreakdown.completed,
+                        background: 'var(--accent-color)',
+                        opacity: 1
+                      }}
+                      title={`Completed: ${progressBreakdown.completed.toFixed(1)}`}
+                    />
+                  )}
+                  {/* In-progress segment (darker accent) */}
+                  {progressBreakdown.inProgress > 0 && (
+                    <div
+                      style={{
+                        flex: progressBreakdown.inProgress,
+                        background: 'var(--accent-color)',
+                        opacity: 0.6
+                      }}
+                      title={`In Progress: ${progressBreakdown.inProgress.toFixed(1)}`}
+                    />
+                  )}
+                  {/* Pending segment (no accent) */}
+                  {progressBreakdown.pending > 0 && (
+                    <div
+                      style={{
+                        flex: progressBreakdown.pending,
+                        background: 'var(--border-color)',
+                        opacity: 0.4
+                      }}
+                      title={`Pending: ${progressBreakdown.pending.toFixed(1)}`}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Row 1: Metric */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               <Button
