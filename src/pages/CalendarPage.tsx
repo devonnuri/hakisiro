@@ -28,15 +28,26 @@ export const CalendarPage: React.FC = () => {
     return db.dailyStats.where('date').between(startStr, endStr, true, true).toArray();
   }, [monthStart, monthEnd]);
 
-  const { statsMap, maxA } = useMemo(() => {
+  // Fetch memos for the whole month
+  const memos = useLiveQuery(() => {
+    const startStr = format(monthStart, 'yyyy-MM-dd');
+    const endStr = format(monthEnd, 'yyyy-MM-dd');
+    return db.dailyMemos.where('date').between(startStr, endStr, true, true).toArray();
+  }, [monthStart, monthEnd]);
+
+  const { statsMap, maxA, memosMap } = useMemo(() => {
     const map: Record<string, { A: number; E: number }> = {};
+    const momos: Record<string, boolean> = {};
     let max = 0;
     stats?.forEach((s: any) => {
       map[s.date] = { A: s.A, E: s.E };
       if (s.A > max) max = s.A;
     });
-    return { statsMap: map, maxA: max };
-  }, [stats]);
+    memos?.forEach((m: any) => {
+      momos[m.date] = true;
+    });
+    return { statsMap: map, maxA: max, memosMap: momos };
+  }, [stats, memos]);
 
   return (
     <div
@@ -107,15 +118,15 @@ export const CalendarPage: React.FC = () => {
             const isTodayDate = isToday(day);
 
             // Heatmap logic
-            let background = 'var(--bg-color)';
+            let background = '#000';
             let color = 'var(--text-primary)';
             if (stat && stat.A > 0 && maxA > 0) {
               const intensity = Math.min(1, stat.A / maxA);
               // Calculate green intensity manually or use opacity
               // Using opacity on a green layer
-              const alpha = 0.1 + intensity * 0.7;
+              const alpha = 0.1 + intensity * 0.9;
               // Need a solid color for TUI feel ideally, or just use RGBA
-              background = `rgba(86, 156, 214, ${alpha})`; // Blueish accent
+              background = `rgba(59, 142, 234, ${alpha})`; // Blueish accent
               if (intensity > 0.5) color = '#fff';
             }
 
@@ -134,8 +145,20 @@ export const CalendarPage: React.FC = () => {
                 }}
                 onClick={() => navigate(`/day/${dateStr}`)}
               >
-                <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: 4 }}>
-                  {format(day, 'd')}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: 4
+                  }}
+                >
+                  {memosMap[dateStr] && (
+                    <div style={{ fontWeight: 'bold', fontSize: '0.9em' }}>#</div>
+                  )}
+                  <div style={{ textAlign: 'right', fontWeight: 'bold', flex: 1 }}>
+                    {format(day, 'd')}
+                  </div>
                 </div>
                 {stat && stat.A > 0 && (
                   <div
