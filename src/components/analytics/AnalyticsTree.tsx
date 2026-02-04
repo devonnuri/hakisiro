@@ -143,21 +143,33 @@ export const AnalyticsTree: React.FC = () => {
     const lastDate = new Date(stats[stats.length - 1].date);
     const dateMap = new Map<string, DailyStats>(stats.map((s) => [s.date, s]));
 
-    const out: Array<{ date: string; A: number; E: number }> = [];
+    // Build all data points first
+    const allData: Array<{ date: string; A: number; E: number }> = [];
     const cur = new Date(firstDate);
     while (cur <= lastDate) {
       const dstr = cur.toISOString().split('T')[0];
       const s = dateMap.get(dstr);
       if (selectedId === 'ROOT') {
-        out.push({ date: dstr, A: s?.A || 0, E: s?.E || 0 });
+        allData.push({ date: dstr, A: s?.A || 0, E: s?.E || 0 });
       } else {
         const a = s?.byNodeA?.[selectedId] || 0;
         const e = s?.byNodeE?.[selectedId] || 0;
-        out.push({ date: dstr, A: a, E: e });
+        allData.push({ date: dstr, A: a, E: e });
       }
       cur.setDate(cur.getDate() + 1);
     }
-    return out;
+
+    // Find first and last dates with activity for the selected node
+    const firstActivityIndex = allData.findIndex(d => d.A > 0 || d.E > 0);
+    const lastActivityIndex = allData.reduce((lastIdx, d, idx) => 
+      (d.A > 0 || d.E > 0) ? idx : lastIdx, -1);
+
+    if (firstActivityIndex === -1 || lastActivityIndex === -1) {
+      return allData; // No activity found, return all data
+    }
+
+    // Return only the range with activity
+    return allData.slice(firstActivityIndex, lastActivityIndex + 1);
   }, [stats, selectedId]);
 
   const accumulatedData = useMemo(() => {
@@ -326,7 +338,7 @@ export const AnalyticsTree: React.FC = () => {
 
       {/* Charts */}
       <div style={{ flex: 1, minWidth: isMobile ? '100%' : 300 }}>
-        <Panel title={selectedId === 'ROOT' ? 'Overall History' : 'Node History'}>
+        <Panel title="Node Analytics">
           <div style={{ padding: 8 }}>
             {/* Progress Bar */}
             {progressBreakdown.total > 0 && (
