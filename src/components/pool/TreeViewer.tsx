@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db';
 import { NodeService } from '../../services/NodeService';
@@ -7,186 +7,8 @@ import { Button } from '../ui/Button';
 import { Panel } from '../ui/Panel';
 import { Input } from '../ui/Input';
 import { TaskList } from './TaskList';
-import clsx from 'clsx';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-
-interface NodeItemProps {
-  node: TreeNode;
-  level: number;
-  childNodes: TreeNode[];
-  allNodes: TreeNode[];
-  onSelect: (node: TreeNode) => void;
-  selectedId?: string;
-  expandedIds: Set<string>;
-  toggleExpand: (id: string) => void;
-  creatingParentId: string | null;
-  onConfirmCreate: (name: string) => void;
-  onCancelCreate: () => void;
-  nodeStats?: Map<string, { current: number; max: number }>;
-}
-
-const NodeItem: React.FC<NodeItemProps> = ({
-  node,
-  level,
-  childNodes,
-  allNodes,
-  onSelect,
-  selectedId,
-  expandedIds,
-  toggleExpand,
-  creatingParentId,
-  onConfirmCreate,
-  onCancelCreate,
-  nodeStats
-}) => {
-  const isExpanded = expandedIds.has(node.id);
-  const isSelected = selectedId === node.id;
-  const hasChildren = childNodes.length > 0;
-  const isCreatingChild = creatingParentId === node.id;
-
-  const stats = nodeStats?.get(node.id);
-  const progressPercent = stats && stats.max > 0 ? (stats.current / stats.max) * 100 : 0;
-  // If selected, maybe mix colors? simpler to just layer.
-  // Selection uses background color. Gradient overrides background-color?
-  // Use background-image for gradient, background-color for selection?
-  // But wait, standard CSS: background sets all.
-  // Let's use a pseudo-element or just simple gradient logic.
-  // User: "color with primary color in the ratio"
-
-  // If selected, we might want it brighter?
-  // Let's use the gradient as the base, and add a border or outline if selected?
-  // Or: Selection adds a full highlight, progress adds a partial tint?
-  // Let's keep it simple: Gradient IS the background. Selection is an outline or text color change?
-  // Current selection: background: var(--highlight-color).
-  // Problem: --highlight-color is opaque usually.
-
-  // Strategy:
-  // background: linear-gradient(to right, var(--highlight-color) P%, transparent P%)
-  // If selected, maybe just border? Or change the "transparent" part to "highlight-dim"?
-  // Let's try: Overlay selection style via class.
-  // Actually, user wants primary color.
-
-  const bgStyle = {
-    background: `linear-gradient(to right, var(--highlight-color) ${progressPercent}%, transparent ${progressPercent}%)`
-  };
-
-  if (isSelected) {
-    // If selected, maybe make the WHOLE background highlight, but darker?
-    // Or maybe just use a distinct border.
-    // Let's stick to gradient, but if selected, maybe add a border.
-  }
-
-  return (
-    <div style={{ marginLeft: 16 * Math.min(level, 1) }}>
-      <div
-        className={clsx('node-row', isSelected && 'selected')}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '2px 4px',
-          cursor: 'pointer',
-          border: isSelected ? '1px solid var(--accent-color)' : '1px solid transparent',
-          ...bgStyle
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(node);
-        }}
-      >
-        <div
-          style={{ width: 16, textAlign: 'center', marginRight: 4, cursor: 'pointer' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleExpand(node.id);
-          }}
-        >
-          {hasChildren ? (isExpanded ? '∨' : '∧') : '·'}
-        </div>
-        <div style={{ fontWeight: 'bold' }}>{node.code}</div>
-        <div style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>{node.name}</div>
-      </div>
-
-      {isExpanded && (
-        <>
-          {childNodes.map((child) => {
-            const grandkids = allNodes
-              .filter((n) => n.parentId === child.id)
-              .sort((a, b) => a.order - b.order);
-            return (
-              <NodeItem
-                key={child.id}
-                node={child}
-                level={level + 1}
-                childNodes={grandkids}
-                allNodes={allNodes}
-                onSelect={onSelect}
-                selectedId={selectedId}
-                expandedIds={expandedIds}
-                toggleExpand={toggleExpand}
-                creatingParentId={creatingParentId}
-                onConfirmCreate={onConfirmCreate}
-                onCancelCreate={onCancelCreate}
-                nodeStats={nodeStats}
-              />
-            );
-          })}
-          {isCreatingChild && (
-            <div style={{ marginLeft: (level + 1) * 16, padding: '2px 4px' }}>
-              <EditBox onSave={onConfirmCreate} onCancel={onCancelCreate} />
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-};
-
-// Inline Edit component
-const EditBox: React.FC<{
-  initialValue?: string;
-  onSave: (val: string) => void;
-  onCancel: () => void;
-}> = ({ initialValue = '', onSave, onCancel }) => {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.value = initialValue;
-      ref.current.focus();
-      ref.current.select();
-    }
-  }, []); // Run once on mount
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (ref.current?.value.trim()) onSave(ref.current.value.trim());
-      else onCancel();
-    } else if (e.key === 'Escape') {
-      onCancel();
-    }
-  };
-
-  return (
-    <input
-      ref={ref}
-      type="text"
-      placeholder="Node Name..."
-      onKeyDown={handleKeyDown}
-      onBlur={() => {
-        // Blur might trigger before click handling?
-        // Usually safe to save on blur for "click away to save"
-        if (ref.current?.value.trim()) onSave(ref.current.value.trim());
-        else onCancel();
-      }}
-      style={{
-        background: 'var(--bg-color)',
-        color: 'var(--text-primary)',
-        border: '1px solid var(--accent-color)',
-        width: '150px',
-        fontFamily: 'inherit'
-      }}
-    />
-  );
-};
+import { NodeTree } from '../common/NodeTree';
 
 export const TreeViewer: React.FC = () => {
   const nodes = useLiveQuery(() => db.nodes.toArray());
@@ -232,16 +54,16 @@ export const TreeViewer: React.FC = () => {
     }
   }, [nodes]);
 
-  const rootNodes = useMemo(() => {
-    if (!nodes) return [];
-    return nodes.filter((n) => !n.parentId).sort((a, b) => a.order - b.order);
-  }, [nodes]);
-
   const toggleExpand = (id: string) => {
     const newSet = new Set(expandedIds);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setExpandedIds(newSet);
+  };
+
+  const handleSelectNode = (nodeId: string) => {
+    const node = nodes?.find((n) => n.id === nodeId);
+    if (node) setSelectedNode(node);
   };
 
   const handleStartCreateRoot = () => {
@@ -348,43 +170,19 @@ export const TreeViewer: React.FC = () => {
             </Button>
           }
         >
-          <div
-            className="tree-content"
-            style={{ whiteSpace: 'nowrap', minWidth: 'fit-content', minHeight: '100%' }}
-            onClick={() => setSelectedNode(null)}
-          >
-            {!nodes || nodes.length === 0
-              ? creatingParentId !== 'ROOT' && (
-                  <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
-                    No nodes. Create a root.
-                  </div>
-                )
-              : rootNodes.map((node) => (
-                  <NodeItem
-                    key={node.id}
-                    node={node}
-                    level={0}
-                    childNodes={nodes
-                      .filter((n) => n.parentId === node.id)
-                      .sort((a, b) => a.order - b.order)}
-                    allNodes={nodes}
-                    onSelect={setSelectedNode}
-                    selectedId={selectedNode?.id}
-                    expandedIds={expandedIds}
-                    toggleExpand={toggleExpand}
-                    creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
-                    onConfirmCreate={handleConfirmCreate}
-                    onCancelCreate={() => setCreatingParentId(null)}
-                    nodeStats={nodeStats}
-                  />
-                ))}
-
-            {creatingParentId === 'ROOT' && (
-              <div style={{ padding: '2px 4px' }}>
-                <EditBox onSave={handleConfirmCreate} onCancel={() => setCreatingParentId(null)} />
-              </div>
-            )}
-          </div>
+          <NodeTree
+            nodes={nodes}
+            selectedId={selectedNode?.id}
+            onSelect={handleSelectNode}
+            expandedIds={expandedIds}
+            toggleExpand={toggleExpand}
+            creatingParentId={creatingParentId}
+            onConfirmCreate={handleConfirmCreate}
+            onCancelCreate={() => setCreatingParentId(null)}
+            nodeStats={nodeStats}
+            showProgress={true}
+            onBackgroundClick={() => setSelectedNode(null)}
+          />
         </Panel>
       )}
 

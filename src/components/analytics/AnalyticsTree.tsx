@@ -1,97 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db';
-import type { TreeNode, DailyStats } from '../../types/db';
+import type { DailyStats } from '../../types/db';
 import { Panel } from '../ui/Panel';
 import { Button } from '../ui/Button';
-import clsx from 'clsx';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-
-interface NodeItemProps {
-  node: TreeNode | { id: 'ROOT'; name: string; code: string; parentId: null };
-  level: number;
-  childNodes: TreeNode[];
-  allNodes: TreeNode[];
-  onSelect: (nodeId: string) => void;
-  selectedId?: string;
-  expandedIds: Set<string>;
-  toggleExpand: (id: string) => void;
-}
-
-const NodeItem: React.FC<NodeItemProps> = ({
-  node,
-  level,
-  childNodes,
-  allNodes,
-  onSelect,
-  selectedId,
-  expandedIds,
-  toggleExpand
-}) => {
-  const isExpanded = expandedIds.has(node.id);
-  const isSelected = selectedId === node.id;
-  const hasChildren = childNodes.length > 0;
-
-  return (
-    <div style={{ marginLeft: 16 * Math.min(level, 1) }}>
-      <div
-        className={clsx('node-row', isSelected && 'selected')}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '2px 4px',
-          cursor: 'pointer',
-          border: isSelected ? '1px solid var(--accent-color)' : '1px solid transparent'
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(node.id);
-        }}
-      >
-        <div
-          style={{
-            width: 20,
-            textAlign: 'center',
-            marginRight: 4,
-            cursor: 'pointer',
-            fontFamily: 'monospace'
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleExpand(node.id);
-          }}
-        >
-          {hasChildren ? (isExpanded ? '[-]' : '[+]') : ' . '}
-        </div>
-        <div style={{ fontWeight: 'bold' }}>{node.code}</div>
-        <div style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>{node.name}</div>
-      </div>
-
-      {isExpanded && (
-        <>
-          {childNodes.map((child) => {
-            const grandkids = allNodes
-              .filter((n) => n.parentId === child.id)
-              .sort((a, b) => a.order - b.order);
-            return (
-              <NodeItem
-                key={child.id}
-                node={child}
-                level={level + 1}
-                childNodes={grandkids}
-                allNodes={allNodes}
-                onSelect={onSelect}
-                selectedId={selectedId}
-                expandedIds={expandedIds}
-                toggleExpand={toggleExpand}
-              />
-            );
-          })}
-        </>
-      )}
-    </div>
-  );
-};
+import { NodeTree } from '../common/NodeTree';
 
 export const AnalyticsTree: React.FC = () => {
   const nodes = useLiveQuery(() => db.nodes.toArray());
@@ -99,30 +13,22 @@ export const AnalyticsTree: React.FC = () => {
   const tasks = useLiveQuery(() => db.tasks.toArray());
 
   const [selectedId, setSelectedId] = useState<string>('ROOT');
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['ROOT']));
+  const initialExpandedIds = useMemo(() => {
+    if (nodes && nodes.length > 0) {
+      const all = new Set(['ROOT']);
+      nodes.forEach((n) => all.add(n.id));
+      return all;
+    }
+    return new Set(['ROOT']);
+  }, [nodes]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(initialExpandedIds);
 
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  useEffect(() => {
-    if (nodes && nodes.length > 0) {
-      setExpandedIds((prev) => {
-        if (prev.size > 1) return prev; // already expanded beyond ROOT
-        const all = new Set(prev);
-        nodes.forEach((n) => all.add(n.id));
-        return all;
-      });
-    }
-  }, [nodes]);
-
-  const rootNode: { id: 'ROOT'; name: string; code: string; parentId: null } = useMemo(
-    () => ({ id: 'ROOT', name: 'All Nodes', code: 'ROOT', parentId: null }),
+  const rootNode = useMemo(
+    () => ({ id: 'ROOT' as const, name: 'All Nodes', code: 'ROOT', parentId: null }),
     []
   );
-
-  const rootChildren = useMemo(() => {
-    if (!nodes) return [] as TreeNode[];
-    return nodes.filter((n) => !n.parentId).sort((a, b) => a.order - b.order);
-  }, [nodes]);
 
   const toggleExpand = (id: string) => {
     const next = new Set(expandedIds);
@@ -324,18 +230,14 @@ export const AnalyticsTree: React.FC = () => {
         title="Node Tree"
         style={{ flex: isMobile ? '1' : '0 0 300px', width: isMobile ? '100%' : '300px' }}
       >
-        <div className="tree-content" style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}>
-          <NodeItem
-            node={rootNode}
-            level={0}
-            childNodes={rootChildren}
-            allNodes={nodes || []}
-            onSelect={setSelectedId}
-            selectedId={selectedId}
-            expandedIds={expandedIds}
-            toggleExpand={toggleExpand}
-          />
-        </div>
+        <NodeTree
+          nodes={nodes}
+          rootNode={rootNode}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          expandedIds={expandedIds}
+          toggleExpand={toggleExpand}
+        />
       </Panel>
 
       {/* Charts */}
