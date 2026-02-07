@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db';
 import type { DailyStats } from '../../types/db';
@@ -13,15 +13,18 @@ export const AnalyticsTree: React.FC = () => {
   const tasks = useLiveQuery(() => db.tasks.toArray());
 
   const [selectedId, setSelectedId] = useState<string>('ROOT');
-  const initialExpandedIds = useMemo(() => {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['ROOT']));
+
+  useEffect(() => {
     if (nodes && nodes.length > 0) {
-      const all = new Set(['ROOT']);
-      nodes.forEach((n) => all.add(n.id));
-      return all;
+      setExpandedIds((prev) => {
+        if (prev.size > 1) return prev; // already expanded beyond ROOT
+        const all = new Set(['ROOT']);
+        nodes.forEach((n) => all.add(n.id));
+        return all;
+      });
     }
-    return new Set(['ROOT']);
   }, [nodes]);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(initialExpandedIds);
 
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -144,6 +147,20 @@ export const AnalyticsTree: React.FC = () => {
     return { completed, inProgress, pending, total };
   }, [tasks, subtreeNodeIds]);
 
+  // Calculate Node Stats Map for progress display
+  const nodeStats = useMemo(() => {
+    const stats = new Map<string, { current: number; max: number }>();
+    if (!tasks) return stats;
+
+    for (const t of tasks) {
+      if (!stats.has(t.nodeId)) stats.set(t.nodeId, { current: 0, max: 0 });
+      const s = stats.get(t.nodeId)!;
+      s.current += (t.progress || 0) * t.credit;
+      s.max += 10 * t.credit;
+    }
+    return stats;
+  }, [tasks]);
+
   // Average daily rates from last window
   const windowDays = 14;
   const avgRates = useMemo(() => {
@@ -237,6 +254,8 @@ export const AnalyticsTree: React.FC = () => {
           onSelect={setSelectedId}
           expandedIds={expandedIds}
           toggleExpand={toggleExpand}
+          nodeStats={nodeStats}
+          showProgress={true}
         />
       </Panel>
 

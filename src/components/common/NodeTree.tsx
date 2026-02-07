@@ -40,6 +40,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
 
   const stats = nodeStats?.get(node.id);
   const progressPercent = stats && stats.max > 0 ? (stats.current / stats.max) * 100 : 0;
+  const isFullyProcessed = stats && stats.max > 0 && stats.current >= stats.max;
 
   const bgStyle = showProgress
     ? {
@@ -79,8 +80,8 @@ const NodeItem: React.FC<NodeItemProps> = ({
         >
           {hasChildren ? (isExpanded ? '∨' : '∧') : '·'}
         </div>
-        <div style={{ fontWeight: 'bold' }}>{node.code}</div>
-        <div style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>{node.name}</div>
+        <div style={{ fontWeight: 'bold', textDecoration: isFullyProcessed ? 'line-through' : 'none' }}>{node.code}</div>
+        <div style={{ marginLeft: 8, color: 'var(--text-secondary)', textDecoration: isFullyProcessed ? 'line-through' : 'none' }}>{node.name}</div>
       </div>
 
       {isExpanded && (
