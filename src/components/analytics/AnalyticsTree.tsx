@@ -160,9 +160,11 @@ export const AnalyticsTree: React.FC = () => {
     }
 
     // Find first and last dates with activity for the selected node
-    const firstActivityIndex = allData.findIndex(d => d.A > 0 || d.E > 0);
-    const lastActivityIndex = allData.reduce((lastIdx, d, idx) => 
-      (d.A > 0 || d.E > 0) ? idx : lastIdx, -1);
+    const firstActivityIndex = allData.findIndex((d) => d.A > 0 || d.E > 0);
+    const lastActivityIndex = allData.reduce(
+      (lastIdx, d, idx) => (d.A > 0 || d.E > 0 ? idx : lastIdx),
+      -1
+    );
 
     if (firstActivityIndex === -1 || lastActivityIndex === -1) {
       return allData; // No activity found, return all data
@@ -347,7 +349,8 @@ export const AnalyticsTree: React.FC = () => {
                   style={{ fontSize: '0.85em', marginBottom: 4, color: 'var(--text-secondary)' }}
                 >
                   Task Credits: {progressBreakdown.completed.toFixed(1)} /&nbsp;
-                  {progressBreakdown.total.toFixed(1)}
+                  {progressBreakdown.total.toFixed(1)} (
+                  {((progressBreakdown.completed / progressBreakdown.total) * 100).toFixed(1)}%)
                 </div>
                 <div
                   style={{

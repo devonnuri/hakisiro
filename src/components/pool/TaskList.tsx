@@ -67,8 +67,8 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
     e.preventDefault();
     if (!draggedId || draggedId === targetId || !tasks) return;
 
-    const draggedIndex = tasks.findIndex(t => t.id === draggedId);
-    const targetIndex = tasks.findIndex(t => t.id === targetId);
+    const draggedIndex = tasks.findIndex((t) => t.id === draggedId);
+    const targetIndex = tasks.findIndex((t) => t.id === targetId);
 
     if (draggedIndex < 0 || targetIndex < 0) return;
 

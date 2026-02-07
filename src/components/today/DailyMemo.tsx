@@ -41,9 +41,18 @@ export const DailyMemo: React.FC<DailyMemoProps> = ({ date }) => {
 
   return (
     <div className="panel" style={{ marginBottom: 16, padding: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8
+        }}
+      >
         <div style={{ fontWeight: 'bold' }}>daily memo</div>
-        <div className="text-dim" style={{ fontSize: '0.85em' }}>{helper}</div>
+        <div className="text-dim" style={{ fontSize: '0.85em' }}>
+          {helper}
+        </div>
       </div>
       <textarea
         value={text}

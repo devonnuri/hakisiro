@@ -22,7 +22,7 @@ interface NodeItemProps {
   creatingParentId: string | null;
   onConfirmCreate: (name: string) => void;
   onCancelCreate: () => void;
-  nodeStats?: Map<string, { current: number, max: number }>;
+  nodeStats?: Map<string, { current: number; max: number }>;
 }
 
 const NodeItem: React.FC<NodeItemProps> = ({
@@ -49,7 +49,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
   // If selected, maybe mix colors? simpler to just layer.
   // Selection uses background color. Gradient overrides background-color?
   // Use background-image for gradient, background-color for selection?
-  // But wait, standard CSS: background sets all. 
+  // But wait, standard CSS: background sets all.
   // Let's use a pseudo-element or just simple gradient logic.
   // User: "color with primary color in the ratio"
 
@@ -60,7 +60,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
   // Current selection: background: var(--highlight-color).
   // Problem: --highlight-color is opaque usually.
 
-  // Strategy: 
+  // Strategy:
   // background: linear-gradient(to right, var(--highlight-color) P%, transparent P%)
   // If selected, maybe just border? Or change the "transparent" part to "highlight-dim"?
   // Let's try: Overlay selection style via class.
@@ -145,52 +145,48 @@ const NodeItem: React.FC<NodeItemProps> = ({
 const EditBox: React.FC<{
   initialValue?: string;
   onSave: (val: string) => void;
-  onCancel: () => void
-}> = ({
-  initialValue = '',
-  onSave,
-  onCancel
-}) => {
-    const ref = useRef<HTMLInputElement>(null);
-    useEffect(() => {
-      if (ref.current) {
-        ref.current.value = initialValue;
-        ref.current.focus();
-        ref.current.select();
-      }
-    }, []); // Run once on mount
+  onCancel: () => void;
+}> = ({ initialValue = '', onSave, onCancel }) => {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.value = initialValue;
+      ref.current.focus();
+      ref.current.select();
+    }
+  }, []); // Run once on mount
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (ref.current?.value.trim()) onSave(ref.current.value.trim());
+      else onCancel();
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      placeholder="Node Name..."
+      onKeyDown={handleKeyDown}
+      onBlur={() => {
+        // Blur might trigger before click handling?
+        // Usually safe to save on blur for "click away to save"
         if (ref.current?.value.trim()) onSave(ref.current.value.trim());
         else onCancel();
-      } else if (e.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    return (
-      <input
-        ref={ref}
-        type="text"
-        placeholder="Node Name..."
-        onKeyDown={handleKeyDown}
-        onBlur={() => {
-          // Blur might trigger before click handling?
-          // Usually safe to save on blur for "click away to save"
-          if (ref.current?.value.trim()) onSave(ref.current.value.trim());
-          else onCancel();
-        }}
-        style={{
-          background: 'var(--bg-color)',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--accent-color)',
-          width: '150px',
-          fontFamily: 'inherit'
-        }}
-      />
-    );
-  };
+      }}
+      style={{
+        background: 'var(--bg-color)',
+        color: 'var(--text-primary)',
+        border: '1px solid var(--accent-color)',
+        width: '150px',
+        fontFamily: 'inherit'
+      }}
+    />
+  );
+};
 
 export const TreeViewer: React.FC = () => {
   const nodes = useLiveQuery(() => db.nodes.toArray());
@@ -199,7 +195,7 @@ export const TreeViewer: React.FC = () => {
   // Calculate Node Stats Map
   // Map<NodeId, { current: number, max: number }>
   const nodeStats = useMemo(() => {
-    const stats = new Map<string, { current: number, max: number }>();
+    const stats = new Map<string, { current: number; max: number }>();
     if (!tasks) return stats;
 
     for (const t of tasks) {
@@ -228,9 +224,9 @@ export const TreeViewer: React.FC = () => {
   // Default Expand All Logic
   useEffect(() => {
     if (nodes && nodes.length > 0) {
-      setExpandedIds(prev => {
+      setExpandedIds((prev) => {
         if (prev.size > 0) return prev; // Already interacted or loaded
-        const allIds = new Set(nodes.map(n => n.id));
+        const allIds = new Set(nodes.map((n) => n.id));
         return allIds;
       });
     }
@@ -339,7 +335,7 @@ export const TreeViewer: React.FC = () => {
             width: isMobile ? '100%' : '300px',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
+            overflow: 'hidden'
           }}
           actions={
             <Button
@@ -359,29 +355,29 @@ export const TreeViewer: React.FC = () => {
           >
             {!nodes || nodes.length === 0
               ? creatingParentId !== 'ROOT' && (
-                <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
-                  No nodes. Create a root.
-                </div>
-              )
+                  <div style={{ padding: 16, color: 'var(--text-secondary)' }}>
+                    No nodes. Create a root.
+                  </div>
+                )
               : rootNodes.map((node) => (
-                <NodeItem
-                  key={node.id}
-                  node={node}
-                  level={0}
-                  childNodes={nodes
-                    .filter((n) => n.parentId === node.id)
-                    .sort((a, b) => a.order - b.order)}
-                  allNodes={nodes}
-                  onSelect={setSelectedNode}
-                  selectedId={selectedNode?.id}
-                  expandedIds={expandedIds}
-                  toggleExpand={toggleExpand}
-                  creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
-                  onConfirmCreate={handleConfirmCreate}
-                  onCancelCreate={() => setCreatingParentId(null)}
-                  nodeStats={nodeStats}
-                />
-              ))}
+                  <NodeItem
+                    key={node.id}
+                    node={node}
+                    level={0}
+                    childNodes={nodes
+                      .filter((n) => n.parentId === node.id)
+                      .sort((a, b) => a.order - b.order)}
+                    allNodes={nodes}
+                    onSelect={setSelectedNode}
+                    selectedId={selectedNode?.id}
+                    expandedIds={expandedIds}
+                    toggleExpand={toggleExpand}
+                    creatingParentId={creatingParentId === 'ROOT' ? null : creatingParentId}
+                    onConfirmCreate={handleConfirmCreate}
+                    onCancelCreate={() => setCreatingParentId(null)}
+                    nodeStats={nodeStats}
+                  />
+                ))}
 
             {creatingParentId === 'ROOT' && (
               <div style={{ padding: '2px 4px' }}>
