@@ -92,7 +92,9 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
     if (!data || !todayItems) return [];
 
     const todayTaskIds = new Set(todayItems.map((i) => i.taskId));
-    const availableTasks = data.tasks.filter((t) => !todayTaskIds.has(t.id));
+    const availableTasks = data.tasks.filter(
+      (t) => !todayTaskIds.has(t.id) && (t.progress || 0) < 10
+    );
 
     if (search.trim()) {
       // Search mode: filter by title
@@ -106,21 +108,49 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
         }));
     } else {
       // No search: show candidates
-      // (1) In-progress tasks (0 < progress < 10)
-      const inProgressTasks = availableTasks.filter((t) => t.progress > 0 && t.progress < 10);
+      // (1) In-progress tasks
+      const inProgressTasks = availableTasks
+        .filter((t) => t.progress > 0 && t.progress < 10)
+        .sort((a, b) => a.order - b.order);
 
-      // (2) Tasks of in-progress nodes (nodes that have tasks with 0 < progress < 10)
-      const inProgressNodeIds = new Set(
-        availableTasks.filter((t) => t.progress > 0 && t.progress < 10).map((t) => t.nodeId)
-      );
+      // (2) Unstarted tasks ordered by node progress ratio
+      const nodeStats = new Map<string, { current: number; max: number }>();
+      for (const t of data.tasks) {
+        if (!nodeStats.has(t.nodeId)) nodeStats.set(t.nodeId, { current: 0, max: 0 });
+        const s = nodeStats.get(t.nodeId)!;
+        s.current += (t.progress || 0) * t.credit;
+        s.max += 10 * t.credit;
+      }
 
-      const tasksOfInProgressNodes = availableTasks.filter(
-        (t) => !inProgressTasks.find((ipt) => ipt.id === t.id) && inProgressNodeIds.has(t.nodeId)
-      );
+      const inProgressIds = new Set(inProgressTasks.map((t) => t.id));
+      const remainingTasks = availableTasks.filter((t) => !inProgressIds.has(t.id));
+      const remainingByNode = new Map<string, Task[]>();
+      for (const t of remainingTasks) {
+        if (!remainingByNode.has(t.nodeId)) remainingByNode.set(t.nodeId, []);
+        remainingByNode.get(t.nodeId)!.push(t);
+      }
+      for (const list of remainingByNode.values()) {
+        list.sort((a, b) => a.order - b.order);
+      }
 
-      const candidates = [...inProgressTasks, ...tasksOfInProgressNodes].slice(0, 5);
+      const nodesByRatio = Array.from(remainingByNode.keys()).sort((a, b) => {
+        const aStats = nodeStats.get(a);
+        const bStats = nodeStats.get(b);
+        const aRatio = aStats && aStats.max > 0 ? aStats.current / aStats.max : 0;
+        const bRatio = bStats && bStats.max > 0 ? bStats.current / bStats.max : 0;
+        return bRatio - aRatio;
+      });
 
-      return candidates.map((t) => ({
+      const ordered: Task[] = [...inProgressTasks];
+      for (const nodeId of nodesByRatio) {
+        const stats = nodeStats.get(nodeId);
+        const ratio = stats && stats.max > 0 ? stats.current / stats.max : 0;
+        if (ratio >= 1) continue;
+        const list = remainingByNode.get(nodeId);
+        if (list) ordered.push(...list);
+      }
+
+      return ordered.slice(0, 5).map((t) => ({
         ...t,
         nodeCode: data.nodeMap.get(t.nodeId)?.code || '?'
       }));
