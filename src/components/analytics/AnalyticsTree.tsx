@@ -129,21 +129,27 @@ export const AnalyticsTree: React.FC = () => {
   // Progress bar data: completed, in-progress, pending
   const progressBreakdown = useMemo(() => {
     const tlist = (tasks || []).filter((t) => subtreeNodeIds.includes(t.nodeId));
-    let completed = 0; // progress = 10
-    let inProgress = 0; // 0 < progress < 10
-    let pending = 0; // progress = 0
+    let completed = 0;
+    let pending = 0;
+    let total = 0;
+
     for (const t of tlist) {
       const progress = t.progress || 0; // 0..10
-      const activity = t.credit; // Using credit as activity metric
-      if (progress === 10) {
-        completed += activity;
-      } else if (progress > 0) {
-        inProgress += activity;
-      } else {
-        pending += activity;
+      const credit = t.credit;
+      total += credit;
+
+      // Completed: sum of [credit * (progress / 10)]
+      completed += credit * (progress / 10);
+
+      // Pending: sum of credits of tasks with progress = 0
+      if (progress === 0) {
+        pending += credit;
       }
     }
-    const total = completed + inProgress + pending;
+
+    // In Progress: rest of those two
+    const inProgress = total - completed - pending;
+
     return { completed, inProgress, pending, total };
   }, [tasks, subtreeNodeIds]);
 
