@@ -23,6 +23,10 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
   // DnD State
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
@@ -48,6 +52,30 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
   const handleDelete = async (task: Task) => {
     if (confirm(`Delete task "${task.title}"?`)) {
       await TaskService.deleteTask(task.id);
+    }
+  };
+
+  const handleEditStart = (task: Task) => {
+    setEditingId(task.id);
+    setEditingTitle(task.title);
+  };
+
+  const handleEditSave = async (task: Task) => {
+    if (editingTitle.trim() && editingTitle !== task.title) {
+      await TaskService.updateTask(task.id, { title: editingTitle.trim() });
+    }
+    setEditingId(null);
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent, task: Task) => {
+    if (e.key === 'Enter') {
+      handleEditSave(task);
+    } else if (e.key === 'Escape') {
+      handleEditCancel();
     }
   };
 
@@ -157,10 +185,29 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                   style={{
                     flex: 1,
                     textDecoration: isDone ? 'line-through' : 'none',
-                    color: isDone ? 'var(--text-secondary)' : 'inherit'
+                    color: isDone ? 'var(--text-secondary)' : 'inherit',
+                    cursor: 'pointer'
                   }}
+                  onDoubleClick={() => handleEditStart(task)}
                 >
-                  {task.title}
+                  {editingId === task.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onKeyDown={(e) => handleEditKeyDown(e, task)}
+                      onBlur={() => handleEditSave(task)}
+                      className="retro-input"
+                      style={{
+                        width: '100%',
+                        padding: '2px 4px',
+                        border: '1px solid var(--highlight-color)'
+                      }}
+                    />
+                  ) : (
+                    task.title
+                  )}
                 </div>
 
                 <div title="Credits" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
