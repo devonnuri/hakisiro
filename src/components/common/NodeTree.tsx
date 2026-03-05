@@ -122,7 +122,7 @@ const NodeItem: React.FC<NodeItemProps> = ({
             );
           })}
           {isCreatingChild && onConfirmCreate && onCancelCreate && (
-            <div style={{ marginLeft: (level + 1) * 16, padding: '2px 4px' }}>
+            <div style={{ marginLeft: 16 * Math.min(level + 1, 1) }}>
               <EditBox onSave={onConfirmCreate} onCancel={onCancelCreate} />
             </div>
           )}
@@ -156,23 +156,41 @@ const EditBox: React.FC<{
   };
 
   return (
-    <input
-      ref={ref}
-      type="text"
-      placeholder="Node Name..."
-      onKeyDown={handleKeyDown}
-      onBlur={() => {
-        if (ref.current?.value.trim()) onSave(ref.current.value.trim());
-        else onCancel();
-      }}
+    <div
       style={{
-        background: 'var(--bg-color)',
-        color: 'var(--text-primary)',
-        border: '1px solid var(--accent-color)',
-        width: '150px',
-        fontFamily: 'inherit'
+        display: 'flex',
+        alignItems: 'center',
+        padding: '2px 4px'
       }}
-    />
+    >
+      <div
+        style={{
+          width: 20,
+          textAlign: 'center',
+          marginRight: 4,
+          fontFamily: 'monospace'
+        }}
+      >
+        ·
+      </div>
+      <input
+        ref={ref}
+        type="text"
+        placeholder="Node Name..."
+        onKeyDown={handleKeyDown}
+        onBlur={() => {
+          if (ref.current?.value.trim()) onSave(ref.current.value.trim());
+          else onCancel();
+        }}
+        style={{
+          background: 'var(--bg-color)',
+          color: 'var(--text-primary)',
+          border: '1px solid var(--accent-color)',
+          width: '150px',
+          fontFamily: 'inherit'
+        }}
+      />
+    </div>
   );
 };
 
@@ -267,9 +285,7 @@ export const NodeTree: React.FC<NodeTreeProps> = ({
               ))}
 
           {creatingParentId === 'ROOT' && onConfirmCreate && onCancelCreate && (
-            <div style={{ padding: '2px 4px' }}>
-              <EditBox onSave={onConfirmCreate} onCancel={onCancelCreate} />
-            </div>
+            <EditBox onSave={onConfirmCreate} onCancel={onCancelCreate} />
           )}
         </>
       )}
