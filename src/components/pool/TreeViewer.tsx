@@ -165,6 +165,11 @@ export const TreeViewer: React.FC = () => {
                 if (selectedNode) handleStartCreateChild();
                 else handleStartCreateRoot();
               }}
+              style={{
+                fontSize: '0.8em',
+                color: 'var(--panel-bg)',
+                borderColor: 'var(--panel-bg)'
+              }}
             >
               +
             </Button>

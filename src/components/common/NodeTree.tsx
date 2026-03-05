@@ -80,8 +80,20 @@ const NodeItem: React.FC<NodeItemProps> = ({
         >
           {hasChildren ? (isExpanded ? '∨' : '∧') : '·'}
         </div>
-        <div style={{ fontWeight: 'bold', textDecoration: isFullyProcessed ? 'line-through' : 'none' }}>{node.code}</div>
-        <div style={{ marginLeft: 8, color: 'var(--text-secondary)', textDecoration: isFullyProcessed ? 'line-through' : 'none' }}>{node.name}</div>
+        <div
+          style={{ fontWeight: 'bold', textDecoration: isFullyProcessed ? 'line-through' : 'none' }}
+        >
+          {node.code}
+        </div>
+        <div
+          style={{
+            marginLeft: 8,
+            color: 'var(--text-secondary)',
+            textDecoration: isFullyProcessed ? 'line-through' : 'none'
+          }}
+        >
+          {node.name}
+        </div>
       </div>
 
       {isExpanded && (
