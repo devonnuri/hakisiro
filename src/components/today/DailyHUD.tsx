@@ -16,58 +16,57 @@ export const DailyHUD: React.FC<DailyHUDProps> = ({ date }) => {
       return { currentStreak: 0, maxStreak: 0 };
     }
 
-    const sortedStats = allStats.sort((a, b) => a.date.localeCompare(b.date));
-    let currentStreak = 0;
+    const today = new Date().toISOString().split('T')[0];
+
+    // Create a map of dates to activity status
+    const activityMap = new Map<string, boolean>();
+    allStats.forEach((stat) => {
+      activityMap.set(stat.date, stat.A > 0 || stat.E > 0);
+    });
+
+    // Helper function to get date string for a given offset from a date
+    const getDateString = (dateStr: string, offset: number): string => {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + offset);
+      return d.toISOString().split('T')[0];
+    };
+
+    // Calculate max streak by scanning all dates
     let maxStreak = 0;
     let tempStreak = 0;
+    const sortedDates = Array.from(activityMap.keys()).sort();
 
-    // Check if today has any activity
-    const today = new Date().toISOString().split('T')[0];
-    const hasActivityToday = sortedStats.some((s) => s.date === today && (s.A > 0 || s.E > 0));
+    if (sortedDates.length > 0) {
+      const firstDate = sortedDates[0];
+      const lastDate = sortedDates[sortedDates.length - 1];
 
-    for (let i = 0; i < sortedStats.length; i++) {
-      const stat = sortedStats[i];
-      const hasActivity = stat.A > 0 || stat.E > 0;
+      let currentDate = firstDate;
+      while (currentDate <= lastDate) {
+        const hasActivity = activityMap.get(currentDate);
 
-      if (hasActivity) {
-        tempStreak++;
-        maxStreak = Math.max(maxStreak, tempStreak);
-      } else {
-        tempStreak = 0;
+        if (hasActivity) {
+          tempStreak++;
+          maxStreak = Math.max(maxStreak, tempStreak);
+        } else {
+          tempStreak = 0;
+        }
+
+        currentDate = getDateString(currentDate, 1);
       }
     }
 
-    // Calculate current streak (from most recent activity)
-    if (hasActivityToday) {
-      currentStreak = 1;
-      for (let i = sortedStats.length - 2; i >= 0; i--) {
-        const stat = sortedStats[i];
-        const hasActivity = stat.A > 0 || stat.E > 0;
-        if (hasActivity) {
-          currentStreak++;
-        } else {
-          break;
-        }
-      }
-    } else if (sortedStats.length > 0) {
-      const lastStat = sortedStats[sortedStats.length - 1];
-      const lastDate = new Date(lastStat.date);
-      const todayDate = new Date(today);
-      const daysDiff = Math.floor(
-        (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-      );
+    // Calculate current streak (counting backwards from today)
+    let currentStreak = 0;
+    let checkDate = today;
 
-      if (daysDiff === 1) {
-        // Yesterday had activity, find the streak
-        for (let i = sortedStats.length - 1; i >= 0; i--) {
-          const stat = sortedStats[i];
-          const hasActivity = stat.A > 0 || stat.E > 0;
-          if (hasActivity) {
-            currentStreak++;
-          } else {
-            break;
-          }
-        }
+    while (true) {
+      const hasActivity = activityMap.get(checkDate);
+
+      if (hasActivity) {
+        currentStreak++;
+        checkDate = getDateString(checkDate, -1);
+      } else {
+        break;
       }
     }
 
