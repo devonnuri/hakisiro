@@ -21,7 +21,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ onClose }) => 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // ... (rest of the file constants)
 
   const handleExport = async () => {
     try {

@@ -2,15 +2,12 @@ import React from 'react';
 import { Button } from '../ui/Button';
 
 interface ProgressControlProps {
-  value: number; // 0.0 - 1.0
+  value: number; // 0 - 10
   onChange: (newValue: number) => void;
 }
 
 export const ProgressControl: React.FC<ProgressControlProps> = ({ value, onChange }) => {
-  // Clamp helper
   const clamp = (v: number) => Math.max(0, Math.min(10, v));
-
-  // Display as raw float
   const displayVal = (value / 10).toFixed(1);
 
   const handleStep = (step: number) => {

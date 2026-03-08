@@ -52,7 +52,6 @@ export const AnalyticsTree: React.FC = () => {
     const lastDate = new Date(stats[stats.length - 1].date);
     const dateMap = new Map<string, DailyStats>(stats.map((s) => [s.date, s]));
 
-    // Build all data points first
     const allData: Array<{ date: string; A: number; E: number }> = [];
     const cur = new Date(firstDate);
     while (cur <= lastDate) {
@@ -76,10 +75,9 @@ export const AnalyticsTree: React.FC = () => {
     );
 
     if (firstActivityIndex === -1 || lastActivityIndex === -1) {
-      return allData; // No activity found, return all data
+      return allData;
     }
 
-    // Return only the range with activity
     return allData.slice(firstActivityIndex, lastActivityIndex + 1);
   }, [stats, selectedId]);
 
@@ -93,7 +91,6 @@ export const AnalyticsTree: React.FC = () => {
     });
   }, [chartData]);
 
-  // Helper: subtree node ids for selected node
   const subtreeNodeIds = useMemo(() => {
     if (!nodes || nodes.length === 0) return [] as string[];
     if (selectedId === 'ROOT') return nodes.map((n) => n.id);

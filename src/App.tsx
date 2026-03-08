@@ -9,7 +9,6 @@ import { initializeDatabase } from './db';
 
 function App() {
   useEffect(() => {
-    // Initialize database and ensure data continuity on app start
     initializeDatabase().catch(console.error);
   }, []);
 

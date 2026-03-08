@@ -18,8 +18,6 @@ interface TodayRowProps {
 const TodayRow: React.FC<TodayRowProps> = ({ task, log, onProgressChange, onRemove, nodeCode }) => {
   if (!task) return null;
 
-  // log.weight is now "Sum of Deltas Today".
-  // Activity generated today = credit * weight.
   const activityToday = ((task.credit * (log?.weight || 0)) / 10).toFixed(1);
 
   return (
@@ -70,13 +68,9 @@ interface TodayListProps {
   date: string;
 }
 
-// Helper component for Search
 const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, onCancel }) => {
   const [search, setSearch] = React.useState('');
 
-  // Fetch generic tasks + node codes
-  // Optim: Fetch all tasks & nodes? Or search?
-  // Let's fetch all tasks for filtering.
   const data = useLiveQuery(async () => {
     const tasks = await db.tasks.toArray();
     const nodes = await db.nodes.toArray();
@@ -85,7 +79,6 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
     return { tasks, nodeMap };
   }, []);
 
-  // Fetch today's items to exclude already added tasks
   const todayItems = useLiveQuery(() => db.todayItems.where('date').equals(date).toArray(), [date]);
 
   const matches = React.useMemo(() => {
@@ -97,23 +90,19 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
     );
 
     if (search.trim()) {
-      // Search mode: filter by title
       const term = search.toLowerCase();
       return availableTasks
         .filter((t) => t.title.toLowerCase().includes(term))
-        .slice(0, 5) // Limit results
+        .slice(0, 5)
         .map((t) => ({
           ...t,
           nodeCode: data.nodeMap.get(t.nodeId)?.code || '?'
         }));
     } else {
-      // No search: show candidates
-      // (1) In-progress tasks
       const inProgressTasks = availableTasks
         .filter((t) => t.progress > 0 && t.progress < 10)
         .sort((a, b) => a.order - b.order);
 
-      // (2) Unstarted tasks ordered by node progress ratio
       const nodeStats = new Map<string, { current: number; max: number }>();
       for (const t of data.tasks) {
         if (!nodeStats.has(t.nodeId)) nodeStats.set(t.nodeId, { current: 0, max: 0 });
@@ -158,11 +147,9 @@ const TaskSearch: React.FC<{ date: string; onCancel: () => void }> = ({ date, on
   }, [data, search, todayItems]);
 
   const handleSelect = async (task: Task) => {
-    // Add to Today
-    // Check duplicates
     const exists = await db.todayItems.where('[date+taskId]').equals([date, task.id]).first();
     if (exists) {
-      onCancel(); // Just close if exists? Or alert?
+      onCancel();
       return;
     }
     const count = await db.todayItems.where('date').equals(date).count();
@@ -277,32 +264,24 @@ export const TodayList: React.FC<TodayListProps> = ({ date }) => {
   const handleRemove = async (itemId: number | undefined, task: Task | undefined) => {
     if (!itemId) return;
 
-    // Logic: Revert progress made today
     if (task) {
       const logId = `${date}:${task.id}`;
       const log = await db.logEntries.get(logId);
 
       if (log) {
-        // Revert progress
-        // log.weight is the sum of deltas for this day.
-        // If we remove the task from today, we undo all progress made today.
         const currentProgress = task.progress;
         const delta = log.weight;
-        const newProgress = Math.max(0, currentProgress - delta); // Prevent negative
+        const newProgress = Math.max(0, currentProgress - delta);
 
         const updates: any = { progress: newProgress };
 
-        // Manage completionDate
         if (currentProgress >= 10 && newProgress < 10) {
-          // If it was completed, and reverting makes it uncompleted
           updates.completionDate = null;
         }
-        // Note: If task was completed yesterday, log.weight for today should be 0 (unless we did something).
-        // If log.weight is 0, newProgress == currentProgress. completionDate logic safely ignored (>=10 && <10 false).
 
         await TaskService.updateTask(task.id, updates);
         await db.logEntries.delete(logId);
-        await LedgerService.recomputeDailyStats(date); // Recalculate A/E
+        await LedgerService.recomputeDailyStats(date);
       }
     }
 

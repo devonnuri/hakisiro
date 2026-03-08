@@ -21,14 +21,12 @@ export const CalendarPage: React.FC = () => {
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Fetch stats for the whole month
   const stats = useLiveQuery(() => {
     const startStr = format(monthStart, 'yyyy-MM-dd');
     const endStr = format(monthEnd, 'yyyy-MM-dd');
     return db.dailyStats.where('date').between(startStr, endStr, true, true).toArray();
   }, [monthStart, monthEnd]);
 
-  // Fetch memos for the whole month
   const memos = useLiveQuery(() => {
     const startStr = format(monthStart, 'yyyy-MM-dd');
     const endStr = format(monthEnd, 'yyyy-MM-dd');
@@ -117,16 +115,12 @@ export const CalendarPage: React.FC = () => {
             const stat = statsMap[dateStr];
             const isTodayDate = isToday(day);
 
-            // Heatmap logic
             let background = '#000';
             let color = 'var(--text-primary)';
             if (stat && stat.A > 0 && maxA > 0) {
               const intensity = Math.min(1, stat.A / maxA);
-              // Calculate green intensity manually or use opacity
-              // Using opacity on a green layer
               const alpha = 0.1 + intensity * 0.9;
-              // Need a solid color for TUI feel ideally, or just use RGBA
-              background = `rgba(59, 142, 234, ${alpha})`; // Blueish accent
+              background = `rgba(59, 142, 234, ${alpha})`;
               if (intensity > 0.5) color = '#fff';
             }
 

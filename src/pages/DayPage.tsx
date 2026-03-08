@@ -10,14 +10,11 @@ export const DayPage: React.FC = () => {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
 
-  // Default to today if no date param (though route should handle this, or we redirect)
-  // If used as /today, date is undefined.
   const dateStr = useMemo(() => {
     if (!date) return new Date().toISOString().split('T')[0];
     return date;
   }, [date]);
 
-  // Validation
   const isDateValid = useMemo(() => {
     try {
       return isValid(parseISO(dateStr));

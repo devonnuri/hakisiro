@@ -10,7 +10,6 @@ interface TaskListProps {
 }
 
 export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
-  // Sort by order
   const tasks = useLiveQuery(
     () => db.tasks.where('nodeId').equals(nodeId).sortBy('order'),
     [nodeId]
@@ -20,10 +19,8 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newCredit, setNewCredit] = useState(1);
 
-  // DnD State
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
-  // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
@@ -39,8 +36,6 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
       alert(err.message);
     }
   };
-
-  // Removed handleProgressChange as requested
 
   const handleCreditChange = async (task: Task, newCredit: string) => {
     const val = parseInt(newCredit);
@@ -82,7 +77,6 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = 'move';
-    // Firefox requires setData
     e.dataTransfer.setData('text/plain', id);
   };
 
@@ -100,14 +94,10 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
 
     if (draggedIndex < 0 || targetIndex < 0) return;
 
-    // Reorder
     const newTasks = [...tasks];
     const [moved] = newTasks.splice(draggedIndex, 1);
     newTasks.splice(targetIndex, 0, moved);
 
-    // Update orders in DB
-    // Optim: update only affected range?
-    // Simpler: update all for now (usually < 50 items).
     await db.transaction('rw', db.tasks, async () => {
       for (let i = 0; i < newTasks.length; i++) {
         if (newTasks[i].order !== i) {
@@ -176,7 +166,6 @@ export const TaskList: React.FC<TaskListProps> = ({ nodeId }) => {
                 borderColor: isDone ? 'var(--text-secondary)' : 'var(--border-color)',
                 opacity: draggedId === task.id ? 0.5 : 1,
                 cursor: 'grab',
-                // Progress coloring
                 background: `linear-gradient(to right, var(--highlight-color) ${(task.progress / 10) * 100}%, transparent ${(task.progress / 10) * 100}%)`
               }}
             >
