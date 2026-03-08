@@ -200,7 +200,7 @@ export const AnalyticsTree: React.FC = () => {
     const today = new Date();
     const diffMs = finish.getTime() - today.getTime();
     const relDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    const rate = (avgRates?.avgE ?? 0).toFixed(1);
+    const rate = (avgRates?.avgA ?? 0).toFixed(1);
     return `${yyyy}/${mm}/${dd} (+${relDays}D, ${rate}©/D)`;
   }, [forecastDays, lastStatDate, avgRates]);
 
