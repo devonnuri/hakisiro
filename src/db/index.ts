@@ -159,3 +159,10 @@ export class HakisiroDB extends Dexie {
 }
 
 export const db = new HakisiroDB();
+
+// Initialize database and ensure data continuity
+export async function initializeDatabase() {
+  // Ensure DailyStats continuity from first entry to today
+  const { LedgerService } = await import('../services/LedgerService');
+  await LedgerService.ensureDailyStatsContinuity();
+}

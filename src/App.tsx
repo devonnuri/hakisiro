@@ -1,11 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Layout } from './components/layout/Layout';
 import { DayPage } from './pages/DayPage';
 import { PoolPage } from './pages/PoolPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { CalendarPage } from './pages/CalendarPage';
+import { initializeDatabase } from './db';
 
 function App() {
+  useEffect(() => {
+    // Initialize database and ensure data continuity on app start
+    initializeDatabase().catch(console.error);
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

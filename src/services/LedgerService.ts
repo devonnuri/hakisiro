@@ -64,8 +64,13 @@ export const LedgerService = {
 
   async recomputeDailyStats(date: string): Promise<void> {
     const logs = await db.logEntries.where('date').equals(date).toArray();
-    if (logs.length === 0) {
-      // Clear stats if no logs
+
+    // Check if we should create an entry even with no logs
+    // (if this date is after the first DailyStats entry)
+    const shouldMaintainEntry = await this.shouldMaintainStatsForDate(date);
+
+    if (logs.length === 0 && !shouldMaintainEntry) {
+      // Only delete if this is before the first tracked day
       await db.dailyStats.delete(date);
       return;
     }
@@ -151,5 +156,50 @@ export const LedgerService = {
 
   async getLogsForDate(date: string): Promise<LogEntry[]> {
     return await db.logEntries.where('date').equals(date).toArray();
+  },
+
+  /**
+   * Check if we should maintain a DailyStats entry for this date
+   * (i.e., the date is on or after the first DailyStats entry)
+   */
+  async shouldMaintainStatsForDate(date: string): Promise<boolean> {
+    const firstStats = await db.dailyStats.orderBy('date').first();
+    if (!firstStats) return false;
+    return date >= firstStats.date;
+  },
+
+  /**
+   * Ensure all dates from the first DailyStats entry to the specified end date have entries.
+   * Creates zero-value entries for dates without activity.
+   */
+  async ensureDailyStatsContinuity(endDate?: string): Promise<void> {
+    const firstStats = await db.dailyStats.orderBy('date').first();
+    if (!firstStats) return; // No stats yet, nothing to fill
+
+    const today = endDate || new Date().toISOString().split('T')[0];
+    const firstDate = new Date(firstStats.date);
+    const lastDate = new Date(today);
+
+    // Iterate through each date from first to today
+    const currentDate = new Date(firstDate);
+    while (currentDate <= lastDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      // Check if entry exists
+      const existing = await db.dailyStats.get(dateStr);
+      if (!existing) {
+        // Create zero entry
+        await db.dailyStats.put({
+          date: dateStr,
+          A: 0,
+          E: 0,
+          byNodeA: {},
+          byNodeE: {},
+          updatedAt: Date.now()
+        });
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
   }
 };
