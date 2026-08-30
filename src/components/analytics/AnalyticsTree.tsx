@@ -7,6 +7,8 @@ import { Button } from '../ui/Button';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { NodeTree } from '../common/NodeTree';
 
+const EMA_PERIOD = 14;
+
 export const AnalyticsTree: React.FC = () => {
   const nodes = useLiveQuery(() => db.nodes.toArray());
   const stats = useLiveQuery(() => db.dailyStats.orderBy('date').toArray());
@@ -241,7 +243,40 @@ export const AnalyticsTree: React.FC = () => {
     }
   }, [estimateEnabled, forecastDays, currentSeries, mode, avgRates, outstanding]);
 
-  const maxVal = Math.max(...displaySeries.map((d) => d[metric] || 0), 10);
+  const accumulatedEma = useMemo(() => {
+    if (accumulatedData.length === 0) return [] as number[];
+
+    const alpha = 2 / (EMA_PERIOD + 1);
+    let ema = accumulatedData[0][metric] || 0;
+
+    return accumulatedData.map((d, index) => {
+      if (index > 0) {
+        ema = alpha * (d[metric] || 0) + (1 - alpha) * ema;
+      }
+      return ema;
+    });
+  }, [accumulatedData, metric]);
+
+  const emaSlope = useMemo(() => {
+    const recent = accumulatedEma.slice(-EMA_PERIOD);
+    if (recent.length < 2) return 0;
+    return (recent[recent.length - 1] - recent[0]) / (recent.length - 1);
+  }, [accumulatedEma]);
+
+  const emaForecast = useMemo(() => {
+    if (!estimateEnabled || forecastDays <= 0 || accumulatedEma.length === 0) {
+      return [] as number[];
+    }
+
+    const lastEma = accumulatedEma[accumulatedEma.length - 1];
+    return Array.from({ length: forecastDays }, (_, i) => lastEma + emaSlope * (i + 1));
+  }, [estimateEnabled, forecastDays, accumulatedEma, emaSlope]);
+
+  const maxVal = Math.max(
+    ...displaySeries.map((d) => d[metric] || 0),
+    ...(mode === 'accumulated' ? emaForecast : []),
+    10
+  );
   const barW = chartW / Math.max(1, displaySeries.length);
 
   return (
@@ -429,7 +464,7 @@ export const AnalyticsTree: React.FC = () => {
                     })
                   : // Accumulated line
                     (() => {
-                      const maxAccum = Math.max(...displaySeries.map((d) => d[metric] || 0), 10);
+                      const maxAccum = maxVal;
                       const hist = displaySeries.slice(0, currentSeries.length);
                       const forecast = displaySeries.slice(currentSeries.length - 1); // include last point for continuity
                       const histPoints = hist
@@ -452,8 +487,44 @@ export const AnalyticsTree: React.FC = () => {
                           return `${x},${y}`;
                         })
                         .join(' ');
+                      const emaPoints = accumulatedEma
+                        .map((val, i) => {
+                          const x = padding + (i / Math.max(1, displaySeries.length - 1)) * chartW;
+                          const y = height - padding - (val / maxAccum) * chartH;
+                          return `${x},${y}`;
+                        })
+                        .join(' ');
+                      const emaForecastPoints =
+                        accumulatedEma.length > 0
+                          ? [accumulatedEma[accumulatedEma.length - 1], ...emaForecast]
+                              .map((val, i) => {
+                                const x =
+                                  padding +
+                                  ((i + (currentSeries.length - 1)) /
+                                    Math.max(1, displaySeries.length - 1)) *
+                                    chartW;
+                                const y = height - padding - (val / maxAccum) * chartH;
+                                return `${x},${y}`;
+                              })
+                              .join(' ')
+                          : '';
                       return (
                         <>
+                          <polyline points={emaPoints} fill="none" stroke="#888" strokeWidth="1.5">
+                            <title>{`${EMA_PERIOD}-day EMA`}</title>
+                          </polyline>
+                          {estimateEnabled && emaForecast.length > 0 && (
+                            <polyline
+                              points={emaForecastPoints}
+                              fill="none"
+                              stroke="#888"
+                              strokeWidth="1.5"
+                              strokeDasharray="4 4"
+                              opacity={0.8}
+                            >
+                              <title>{`${EMA_PERIOD}-day EMA slope estimate`}</title>
+                            </polyline>
+                          )}
                           <polyline
                             points={histPoints}
                             fill="none"
