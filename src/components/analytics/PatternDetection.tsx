@@ -188,7 +188,7 @@ export const PatternDetection: React.FC = () => {
         <div style={{ padding: '16px' }}>
           {monthlyTrends && monthlyTrends.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {monthlyTrends.slice(-6).map(([month, trend]) => {
+              {monthlyTrends.map(([month, trend]) => {
                 const maxAvg = Math.max(...monthlyTrends.map(([, t]) => t.avgA));
                 const percentage = (trend.avgA / Math.max(maxAvg, 1)) * 100;
                 return (

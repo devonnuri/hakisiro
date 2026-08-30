@@ -242,7 +242,7 @@ export const AnalyticsTree: React.FC = () => {
   }, [estimateEnabled, forecastDays, currentSeries, mode, avgRates, outstanding]);
 
   const maxVal = Math.max(...displaySeries.map((d) => d[metric] || 0), 10);
-  const barW = Math.max(2, chartW / Math.max(1, displaySeries.length) - 2);
+  const barW = chartW / Math.max(1, displaySeries.length);
 
   return (
     <div style={{ display: 'flex', gap: 16, height: '100%', flexDirection: 'row' }}>
@@ -409,10 +409,7 @@ export const AnalyticsTree: React.FC = () => {
                     displaySeries.map((d, i) => {
                       const val = d[metric] || 0;
                       const h = (val / maxVal) * chartH;
-                      const x =
-                        padding +
-                        i * (chartW / displaySeries.length) +
-                        (chartW / displaySeries.length - barW) / 2;
+                      const x = padding + i * barW;
                       const y = height - padding - h;
                       const isForecast = estimateEnabled && i >= currentSeries.length;
                       return (
@@ -473,25 +470,26 @@ export const AnalyticsTree: React.FC = () => {
                               opacity={0.7}
                             />
                           )}
-                          {displaySeries.map((d, i) => {
-                            const val = d[metric] || 0;
-                            const x =
-                              padding + (i / Math.max(1, displaySeries.length - 1)) * chartW;
-                            const y = height - padding - (val / maxAccum) * chartH;
-                            const isForecast = estimateEnabled && i >= currentSeries.length - 1;
-                            return (
-                              <circle
-                                key={d.date}
-                                cx={x}
-                                cy={y}
-                                r="3"
-                                fill={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
-                                opacity={isForecast ? 0.5 : 1}
-                              >
-                                <title>{`${d.date}: ${val.toFixed(1)}`}</title>
-                              </circle>
-                            );
-                          })}
+                          {displaySeries.length <= 100 &&
+                            displaySeries.map((d, i) => {
+                              const val = d[metric] || 0;
+                              const x =
+                                padding + (i / Math.max(1, displaySeries.length - 1)) * chartW;
+                              const y = height - padding - (val / maxAccum) * chartH;
+                              const isForecast = estimateEnabled && i >= currentSeries.length - 1;
+                              return (
+                                <circle
+                                  key={d.date}
+                                  cx={x}
+                                  cy={y}
+                                  r="3"
+                                  fill={metric === 'A' ? 'var(--accent-color)' : '#2196f3'}
+                                  opacity={isForecast ? 0.5 : 1}
+                                >
+                                  <title>{`${d.date}: ${val.toFixed(1)}`}</title>
+                                </circle>
+                              );
+                            })}
                         </>
                       );
                     })()}
